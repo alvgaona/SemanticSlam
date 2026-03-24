@@ -1,0 +1,27 @@
+id: flight-18p-trackRATM
+track: trackRATM
+control: pilot
+
+flight_time_sec: 44.03
+flown_meters: 441.95
+
+camera:
+    brand: arducam
+    sensor: IMX219
+    fov_diagonal: 175
+    fov_horizontal: 155
+    fov_vertical: 115
+    fps: 120
+    image_width: 640
+    image_height: 480
+    angle: 50
+    exposure: fixed
+    iso: fixed
+
+light:
+    brightness: low
+    type: artificial
+    lux:
+        min: 34.2
+        avg: 72
+        max: 216

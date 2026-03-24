@@ -1,0 +1,27 @@
+{
+  "flight": "flight-03p-ellipse",
+  "cam0_extrinsics_quat_jpl_xyzw": [
+    -0.367,
+    0.366,
+    -0.61,
+    0.6
+  ],
+  "cam0_extrinsics_p_IinC": [
+    0.008,
+    0.021,
+    -0.09
+  ],
+  "cam0_intrinsics": [
+    289.406,
+    386.629,
+    316.767,
+    242.701
+  ],
+  "cam0_distortion_equidistant": [
+    0.047,
+    -0.025,
+    0.029,
+    -0.013
+  ],
+  "camera_imu_timeoffset": -0.01339
+}
