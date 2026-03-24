@@ -1,0 +1,54 @@
+[workspace]
+preview = ["pixi-build"]
+authors = [
+    "David Perez-Saura <perezsaura.david@gmail.com>",
+    "Alvaro Gaona <alvgaona@gmail.com>"
+]
+name = "as2-semantic-slam"
+version = "0.1.0"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
+
+[package.build]
+backend = { name = "pixi-build-ros", version = "*" }
+
+[package.build.config]
+extra-package-mappings = [
+    { g2o = { ros = ["libg2o"] } },
+    { as2_core = { conda = [] } },
+    { as2_msgs = { conda = [] } },
+    { libfmt = { conda = ["fmt"] } },
+    { ceres = { conda = ["ceres-solver"] } },
+]
+
+[package.host-dependencies]
+as2_core = { path = "aerostack2/as2_core" }
+as2_msgs = { path = "aerostack2/as2_msgs" }
+
+[package.run-dependencies]
+as2_core = { path = "aerostack2/as2_core" }
+as2_msgs = { path = "aerostack2/as2_msgs" }
+
+[dependencies]
+pandas = ">=3.0.1,<4"
+numpy = ">=2.4.3,<3"
+scipy = ">=1.17.1,<2"
+pyyaml = ">=6.0.3,<7"
+opencv = ">=4.13.0,<5"
+py-opencv = ">=4.13.0,<5"
+tqdm = ">=4.67.3,<5"
+
+[feature.humble]
+channels = ["robostack-humble"]
+
+[feature.humble.dependencies]
+ros-humble-ros2cli = ">=0.18.17,<0.19"
+ros-humble-ros2launch = ">=0.19.13,<0.20"
+ros-humble-ros2topic = ">=0.18.17,<0.19"
+drone_racing_msgs = { path = "drone-racing-msgs/drone_racing_msgs" }
+ros-humble-as2-semantic-slam = { path = "." }
+ros-humble-rosbag2-storage-mcap = ">=0.15.16,<0.16"
+ros-humble-rosbag2 = ">=0.15.16,<0.16"
+
+[environments]
+default = ["humble"]
