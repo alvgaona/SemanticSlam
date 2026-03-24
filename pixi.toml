@@ -2,6 +2,7 @@
 preview = ["pixi-build"]
 authors = [
     "David Perez-Saura <perezsaura.david@gmail.com>",
+    "Miguel Fernandez-Cortizas <TBD>",
     "Alvaro Gaona <alvgaona@gmail.com>"
 ]
 name = "as2-semantic-slam"
