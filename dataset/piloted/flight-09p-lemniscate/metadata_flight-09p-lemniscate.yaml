@@ -1,0 +1,27 @@
+id: flight-09p-lemniscate
+track: lemniscate
+control: piloted
+
+flight_time_sec: 93.33
+flown_meters: 446.81
+
+camera:
+    brand: arducam
+    sensor: IMX219
+    fov_diagonal: 175
+    fov_horizontal: 155
+    fov_vertical: 115
+    fps: 120
+    image_width: 640
+    image_height: 480
+    angle: 30
+    exposure: auto 
+    iso: auto
+
+light:
+    brightness: medium
+    type: artificial
+    lux:
+        min: 254
+        avg: 672.3
+        max: 955
