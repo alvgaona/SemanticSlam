@@ -1,2 +1,38 @@
+# Build
+build/
+install/
+log/
 .cache/
-build
+
+# Pixi
+.pixi/*
+!.pixi/config.toml
+*.conda
+
+# macOS
+.DS_Store
+
+# Dataset (large files, downloaded separately)
+dataset/piloted/*/camera_flight-*
+dataset/piloted/*/camera_flight-*.zip
+dataset/piloted/*/csv_raw/
+dataset/piloted/*/label_flight-*
+dataset/piloted/*/label_flight-*.zip
+dataset/piloted/*/ros2bag_flight-*
+dataset/piloted/*/rosbag_vio/
+dataset/piloted/*/rosbag_vio_undistorted/
+dataset/piloted/*/*.csv
+dataset/piloted_zipchunk*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+
+# Temporary
+/tmp/
