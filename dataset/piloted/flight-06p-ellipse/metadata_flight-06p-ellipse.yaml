@@ -1,0 +1,27 @@
+id: flight-06p-ellipse
+track: ellipse
+control: piloted
+
+flight_time_sec: 93.37
+flown_meters: 409.09
+
+camera:
+    brand: arducam
+    sensor: IMX219
+    fov_diagonal: 175
+    fov_horizontal: 155
+    fov_vertical: 115
+    fps: 120
+    image_width: 640
+    image_height: 480
+    angle: 30
+    exposure: fixed 
+    iso: fixed
+
+light:
+    brightness: low
+    type: artificial
+    lux:
+        min: 34.2
+        avg: 72
+        max: 216
