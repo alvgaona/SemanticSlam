@@ -84,7 +84,8 @@ SemanticSlam::SemanticSlam(rclcpp::NodeOptions & options)
   map_frame_ = this->get_parameter("map_frame").as_string();
   odom_frame_ = this->get_parameter("odom_frame").as_string();
   robot_frame_ = this->get_parameter("robot_frame").as_string();
-  estimated_map_frame_ = map_frame_ + "_estimated";
+  // estimated_map_frame_ = map_frame_ + "_estimated";
+  estimated_map_frame_ = map_frame_;
 
   if (this->has_parameter("force_object_type")) {
     force_object_type_ = this->get_parameter("force_object_type").as_string();
@@ -104,9 +105,9 @@ SemanticSlam::SemanticSlam(rclcpp::NodeOptions & options)
   //   "map_odom_transform_alpha").as_double();
 
   PARAM("Detection covariance by distance: " << std::boolalpha
-    << detection_covariance_by_distance_); 
+    << detection_covariance_by_distance_);
   PARAM("Detection covariance by distance2: " << std::boolalpha
-    << detection_covariance_by_distance2_); 
+    << detection_covariance_by_distance2_);
   PARAM(PRINT_VAR(detection_covariance_factor_));
   // PARAM(PRINT_VAR(map_odom_transform_alpha_));
   PARAM(PRINT_VAR(detection_orientation_covariance_factor_));
@@ -126,7 +127,7 @@ SemanticSlam::SemanticSlam(rclcpp::NodeOptions & options)
       odometry_topic, sensor_qos,
       std::bind(&SemanticSlam::odomCallback, this, std::placeholders::_1));
     PARAM("Subscribed to Odometry topic: " << odometry_topic);
-   
+
   } else if (!pose_topic.empty()) {
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
       pose_topic, sensor_qos,
@@ -142,7 +143,7 @@ SemanticSlam::SemanticSlam(rclcpp::NodeOptions & options)
   det_options.callback_group = detections_callback_group_;
   detections_sub_ = this->create_subscription<as2_msgs::msg::PoseStampedWithIDArray>(
     detections_topic, sensor_qos,
-    std::bind(&SemanticSlam::detectionsCallback, this, std::placeholders::_1), 
+    std::bind(&SemanticSlam::detectionsCallback, this, std::placeholders::_1),
     det_options);
   // aruco_pose_sub_ = this->create_subscription<as2_msgs::msg::PoseStampedWithID>(
   //   aruco_pose_topic, sensor_qos,
@@ -161,15 +162,18 @@ SemanticSlam::SemanticSlam(rclcpp::NodeOptions & options)
       viz_main_markers_topic, reliable_qos);
     viz_temp_markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
       viz_temp_markers_topic, reliable_qos);
-  } 
+  }
 
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
 
 
+  csv_logger_ = std::make_unique<CsvLogger>(".");
+
   optimizer_ptr_ = std::make_unique<OptimizerG2O>();
   optimizer_ptr_->setParameters(getOptimizerParameters());
+  optimizer_ptr_->setCsvLogger(csv_logger_.get());
 
   std_msgs::msg::Header header;
   header.stamp = this->now();
@@ -265,6 +269,12 @@ void SemanticSlam::processOdometryReceived(
   corrected_localization_msg.header.frame_id = earth_frame_;
   corrected_localization_pub_->publish(corrected_localization_msg);
 
+  if (csv_logger_) {
+    csv_logger_->logOdom(
+      _header.stamp.sec, _header.stamp.nanosec,
+      _odom_pose, _odom_covariance, corrected_odometry_pose);
+  }
+
   if (visualize_graphs_) {
     // Publish corrected Path
     static nav_msgs::msg::Path corrected_path_msg;
@@ -341,7 +351,7 @@ void SemanticSlam::detectionsCallback(
     ERROR("No object type provided. Force object type or use 'type' field in msg");
     return;
   }
-  
+
   for (auto & detection : msg->poses) {
     if (object_type == "aruco") {
       processArucoMsg(detection, detection_odometry_info);
@@ -390,14 +400,18 @@ void SemanticSlam::processGateMsg(
 
   bool detections_are_absolute = false;
 
+  if (csv_logger_) {
+    csv_logger_->logDetection(
+      _msg.pose.header.stamp.sec, _msg.pose.header.stamp.nanosec,
+      gate_id, "gate", gate_position,
+      _detection_odometry_info.odom_ref.translation(), detections_are_absolute);
+  }
+
   GateDetection * gate(new GateDetection(
       gate_id, gate_position, gate_covariance,
       detections_are_absolute));
 
   optimizer_ptr_->handleNewObjectDetection(gate, _detection_odometry_info);
-  if (visualize_graphs_) {
-    visualizeTempGraph();
-  }
 }
 
 void SemanticSlam::processArucoMsg(
@@ -434,14 +448,18 @@ void SemanticSlam::processArucoMsg(
 
   bool detections_are_absolute = false;
 
+  if (csv_logger_) {
+    csv_logger_->logDetection(
+      _msg.pose.header.stamp.sec, _msg.pose.header.stamp.nanosec,
+      aruco_id, "aruco", aruco_pose.translation(),
+      _detection_odometry_info.odom_ref.translation(), detections_are_absolute);
+  }
+
   ArucoDetection * aruco(new ArucoDetection(
       aruco_id, aruco_pose, aruco_covariance,
       detections_are_absolute));
 
   optimizer_ptr_->handleNewObjectDetection(aruco, _detection_odometry_info);
-  if (visualize_graphs_) {
-    visualizeTempGraph();
-  }
 }
 
 void SemanticSlam::updateMapOdomTransform(const std_msgs::msg::Header & _header)
@@ -609,6 +627,8 @@ OptimizerG2OParameters SemanticSlam::getOptimizerParameters() {
   double earth_to_map_x = 0.0;
   double earth_to_map_y = 0.0;
   double earth_to_map_z = 0.0;
+  double earth_to_map_roll = 0.0;
+  double earth_to_map_pitch = 0.0;
   double earth_to_map_yaw = 0.0;
 
   if (this->has_parameter("earth_to_map.x")) {
@@ -620,18 +640,26 @@ OptimizerG2OParameters SemanticSlam::getOptimizerParameters() {
   if (this->has_parameter("earth_to_map.z")) {
     this->get_parameter("earth_to_map.z", earth_to_map_z);
   }
+  if (this->has_parameter("earth_to_map.roll")) {
+    this->get_parameter("earth_to_map.roll", earth_to_map_roll);
+  }
+  if (this->has_parameter("earth_to_map.pitch")) {
+    this->get_parameter("earth_to_map.pitch", earth_to_map_pitch);
+  }
   if (this->has_parameter("earth_to_map.yaw")) {
     this->get_parameter("earth_to_map.yaw", earth_to_map_yaw);
   }
-  PARAM(
-    "Earth to map transform: " + std::to_string(earth_to_map_x) + ", " +
-    std::to_string(earth_to_map_y) + ", " + std::to_string(earth_to_map_z) + ", yaw=" +
-    std::to_string(earth_to_map_yaw));
+  RCLCPP_INFO(
+    this->get_logger(), "Earth to map: xyz=(%.3f, %.3f, %.3f) rpy=(%.3f, %.3f, %.3f)",
+    earth_to_map_x, earth_to_map_y, earth_to_map_z,
+    earth_to_map_roll, earth_to_map_pitch, earth_to_map_yaw);
 
   Eigen::Vector3d e2m_translation =
     Eigen::Vector3d(earth_to_map_x, earth_to_map_y, earth_to_map_z);
-  double yaw = earth_to_map_yaw;
-  Eigen::Quaterniond e2m_rotation(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()));
+  Eigen::Quaterniond e2m_rotation =
+    Eigen::AngleAxisd(earth_to_map_yaw, Eigen::Vector3d::UnitZ()) *
+    Eigen::AngleAxisd(earth_to_map_pitch, Eigen::Vector3d::UnitY()) *
+    Eigen::AngleAxisd(earth_to_map_roll, Eigen::Vector3d::UnitX());
   earth_to_map_transform_ = convertToIsometry3d(e2m_translation, e2m_rotation);
   optimizer_params.earth_to_map_transform = earth_to_map_transform_;
 

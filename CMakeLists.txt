@@ -42,6 +42,7 @@ endforeach()
 include_directories(
   include
   include/${PROJECT_NAME}
+  include/as2_slam
 )
 
 # G2O (depends on ceres which depends on glog)

@@ -50,6 +50,7 @@
 #include "utils/conversions.hpp"
 #include "utils/general_utils.hpp"
 #include "utils/debug_utils.hpp"
+#include "utils/csv_logger.hpp"
 
 OptimizerG2O::OptimizerG2O()
 {
@@ -158,6 +159,7 @@ bool OptimizerG2O::handleNewOdom(
   main_graph->addNewKeyframe(
     new_odometry_info.map_ref, new_odometry_info.increment,
     new_odometry_info.covariance_matrix);
+  detections_since_last_keyframe_.clear();
 
   graph_mutex_.lock();
   if (temp_graph == nullptr) {
@@ -166,48 +168,55 @@ bool OptimizerG2O::handleNewOdom(
   }
   if (temp_graph_generated_ && temp_graph) {
     if (temp_graph->optimizeGraph()) {
-      // FLAG("ADD TEMP GRAPH DETECTIONS TO MAIN GRAPH");
+      Eigen::Isometry3d corrected_odom = temp_graph->getLastOdomNode()->getPose();
+      OdometryInfo corrected_odometry_info = new_odometry_info;
+      corrected_odometry_info.odom_ref = corrected_odom;
+      corrected_odometry_info.map_ref = corrected_odom;
+
       for (auto object : temp_graph->getObjectNodes()) {
-        // TODO(dps): Get all the nodes related and create new edges
         if (!object.second) {
           ERROR("Object node is null");
           continue;
         }
-        // debugGraphVertices(temp_graph);
         try {
-          ObjectDetection * object_detection;
+          ObjectDetection * object_detection = nullptr;
+          bool is_fixed = static_cast<g2o::OptimizableGraph::Vertex *>(
+            object.second->getVertex())->fixed();
+
           ArucoNode * aruco_node = dynamic_cast<ArucoNode *>(object.second);
           if (aruco_node) {
-            Eigen::MatrixXd cov_matrix = temp_graph->computeNodeCovariance(aruco_node);
-            if (cov_matrix.size() == 0) {
-              WARN("Matrix is empty! Using default matrix");
-              // cov_matrix = main_graph_object_covariance;
-              continue;
+            Eigen::MatrixXd cov_matrix;
+            if (is_fixed) {
+              cov_matrix = Eigen::MatrixXd::Identity(6, 6) * 5.0;
+            } else {
+              cov_matrix = temp_graph->computeNodeCovariance(aruco_node);
+              if (cov_matrix.size() == 0) { continue; }
             }
             object_detection = new ArucoDetection(
               object.first,
               aruco_node->getPose(), cov_matrix, true);
-          } 
+          }
 
           GateNode * gate_node = dynamic_cast<GateNode *>(object.second);
           if (gate_node) {
-            Eigen::MatrixXd cov_matrix = temp_graph->computeNodeCovariance(gate_node);
-            if (cov_matrix.size() == 0) {
-              WARN("Matrix is empty! Using default matrix");
-              // cov_matrix = main_graph_object_covariance;
-              continue;
+            Eigen::MatrixXd cov_matrix;
+            if (is_fixed) {
+              cov_matrix = Eigen::MatrixXd::Identity(3, 3) * 5.0;
+            } else {
+              cov_matrix = temp_graph->computeNodeCovariance(gate_node);
+              if (cov_matrix.size() == 0) { continue; }
             }
             object_detection = new GateDetection(
               object.first,
               gate_node->getPosition(), cov_matrix, true);
-        }
+          }
 
-        if (!object_detection->prepareMeasurements(new_odometry_info)) {
-          ERROR("Prepare detection ERROR");
-          continue;
-        }
-        // FIXME(dps): check valid object detection AND Get object edge covariance
-        main_graph->addNewObjectDetection(object_detection);
+          if (!object_detection) { continue; }
+          if (!object_detection->prepareMeasurements(corrected_odometry_info)) {
+            ERROR("Prepare detection ERROR");
+            continue;
+          }
+          main_graph->addNewObjectDetection(object_detection);
 
         } catch (const std::exception & e) {
            ERROR("Exception: " << e.what());
@@ -236,7 +245,17 @@ bool OptimizerG2O::handleNewOdom(
   if (generate_odom_map_transform_) {
     updateOdomMapTransform();
   }
-  // debugGraphVertices(main_graph);
+
+  if (csv_logger_) {
+    auto optimized = getOptimizedPose();
+    auto corrected = earth_map_transform_ * map_odom_tranform_ * last_odometry_added_.odometry;
+    csv_logger_->logKeyframe(0, 0,
+      last_odometry_added_.odometry,
+      static_cast<int>(main_graph->graph_->vertices().size()),
+      static_cast<int>(main_graph->graph_->edges().size()),
+      0.0, 0.0, 0,
+      map_odom_tranform_, optimized, corrected);
+  }
 
   return true;
 }
@@ -280,7 +299,7 @@ bool OptimizerG2O::checkAddingNewDetection(
 
   if (!temp_graph_generated_) {
     temp_graph->initGraph(_detection_odometry_info.map_ref);
-    // temp_graph->initGraph(main_graph->getLastOdomNode()->getPose());
+    temp_graph->setFixedObjects(fixed_objects_);
     temp_graph_generated_ = true;
     // main_graph_object_covariance = _object->getCovarianceMatrix();  // FIXME(dps): remove this
   } else {
@@ -311,13 +330,12 @@ void OptimizerG2O::handleNewObjectDetection(
   }
   
   // std::lock_guard<std::mutex> lock(graph_mutex_);
-  graph_mutex_.lock();
-  if (temp_graph == nullptr) {
-    ERROR("Temp graph is null");
+  std::string id = _object->getId();
+  if (detections_since_last_keyframe_.count(id) > 0) {
     return;
   }
-  temp_graph->addNewObjectDetection(_object);
-  graph_mutex_.unlock();
+  main_graph->addNewObjectDetection(_object);
+  detections_since_last_keyframe_.insert(id);
   // debugGraphVertices(temp_graph);
   // temp_graph->optimizeGraph();
   // debugGraphVertices(temp_graph);

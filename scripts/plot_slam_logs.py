@@ -59,17 +59,17 @@ def main():
     kf = pd.read_csv(kf_path) if kf_path.exists() else None
 
     ax = axes[0, 0]
-    if gt_map is not None:
-        ax.plot(gt_map["x"], gt_map["y"], "k-", alpha=0.4, linewidth=1.5, label="Ground Truth")
+    if gt_path.exists():
+        gt_raw = pd.read_csv(gt_path)
+        ax.plot(gt_raw["x"], gt_raw["y"], "k-", alpha=0.4, linewidth=1.5, label="Ground Truth")
     if odom is not None:
-        ax.plot(odom["raw_x"], odom["raw_y"], "r-", alpha=0.5, linewidth=0.8, label="Raw VIO")
         ax.plot(odom["cor_x"], odom["cor_y"], "b-", alpha=0.8, linewidth=1.0, label="Corrected")
     if fixed is not None:
         ax.scatter(fixed["map_x"], fixed["map_y"], c="green", s=100, marker="*",
                    zorder=5, label="Fixed gates (map)")
     ax.set_xlabel("X (m)")
     ax.set_ylabel("Y (m)")
-    ax.set_title("Ground Truth vs Raw VIO vs Corrected (XY)")
+    ax.set_title("Ground Truth vs Corrected (XY)")
     ax.legend(fontsize=7)
     ax.set_aspect("equal")
     ax.grid(True, alpha=0.3)
@@ -101,13 +101,14 @@ def main():
         ax.grid(True, alpha=0.3)
 
     ax = axes[1, 1]
-    if gt_map is not None:
-        ax.plot(gt_map["x"], gt_map["y"], "k-", alpha=0.4, linewidth=1.5, label="Ground Truth")
+    if gt_path.exists():
+        gt_raw = pd.read_csv(gt_path)
+        ax.plot(gt_raw["x"], gt_raw["y"], "k-", alpha=0.4, linewidth=1.5, label="Ground Truth")
     if odom is not None:
         ax.plot(odom["cor_x"], odom["cor_y"], "b-", alpha=0.8, linewidth=1.0, label="Corrected")
     if fixed is not None:
-        ax.scatter(fixed["map_x"], fixed["map_y"], c="green", s=100, marker="*",
-                   zorder=5, label="Fixed gates (map)")
+        ax.scatter(fixed["earth_x"], fixed["earth_y"], c="green", s=100, marker="*",
+                   zorder=5, label="Fixed gates")
     ax.set_xlabel("X (m)")
     ax.set_ylabel("Y (m)")
     ax.set_title("Corrected vs Ground Truth")
