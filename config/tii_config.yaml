@@ -17,12 +17,12 @@
     odometry_is_relative: false
     generate_odom_map_transform: true
     earth_to_map:
-      x: -0.278436
-      y: -1.527399
-      z: 0.047492
-      roll: 0.071480
-      pitch: -0.115906
-      yaw: 3.002898
+      x: -0.793400
+      y: -1.122114
+      z: -0.513168
+      roll: 0.020519
+      pitch: -0.059699
+      yaw: -3.101762
     visualize_graphs: true
     map_odom_security_threshold: 5.0
     calculate_odom_covariance: true
