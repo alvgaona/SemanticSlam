@@ -92,6 +92,8 @@ public:
     const Eigen::MatrixXd & _covariance, const bool _detections_are_absolute)
   : ObjectDetectionBase(_id, _covariance, _detections_are_absolute), measured_pose_(_pose) {}
 
+  Eigen::Isometry3d getMeasuredPose() const {return measured_pose_;}
+
   bool prepareMeasurements(const OdometryInfo & _detection_odometry) override
   {
     // TODO(dps): Check if we should use map_ref or odom_ref
@@ -125,6 +127,8 @@ public:
   : ObjectDetectionBase(_id, _covariance, _detections_are_absolute), measured_position_(_position)
   {
   }
+
+  Eigen::Vector3d getMeasuredPosition() const {return measured_position_;}
 
   bool prepareMeasurements(const OdometryInfo & _detection_odometry) override
   {

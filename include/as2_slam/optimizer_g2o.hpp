@@ -131,7 +131,6 @@ private:
   bool generate_odom_map_transform_ = false;
   bool calculate_odom_covariance_ = false;
   std::vector<FixedObject> fixed_objects_;
-  std::unordered_set<std::string> detections_since_last_keyframe_;
   CsvLogger * csv_logger_ = nullptr;
 };
 

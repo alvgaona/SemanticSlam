@@ -159,7 +159,6 @@ bool OptimizerG2O::handleNewOdom(
   main_graph->addNewKeyframe(
     new_odometry_info.map_ref, new_odometry_info.increment,
     new_odometry_info.covariance_matrix);
-  detections_since_last_keyframe_.clear();
 
   graph_mutex_.lock();
   if (temp_graph == nullptr) {
@@ -168,10 +167,7 @@ bool OptimizerG2O::handleNewOdom(
   }
   if (temp_graph_generated_ && temp_graph) {
     if (temp_graph->optimizeGraph()) {
-      Eigen::Isometry3d corrected_odom = temp_graph->getLastOdomNode()->getPose();
-      OdometryInfo corrected_odometry_info = new_odometry_info;
-      corrected_odometry_info.odom_ref = corrected_odom;
-      corrected_odometry_info.map_ref = corrected_odom;
+      Eigen::Isometry3d merge_odom_pose = temp_graph->getLastOdomNode()->getPose();
 
       for (auto object : temp_graph->getObjectNodes()) {
         if (!object.second) {
@@ -192,9 +188,9 @@ bool OptimizerG2O::handleNewOdom(
               cov_matrix = temp_graph->computeNodeCovariance(aruco_node);
               if (cov_matrix.size() == 0) { continue; }
             }
+            Eigen::Isometry3d body_rel = merge_odom_pose.inverse() * aruco_node->getPose();
             object_detection = new ArucoDetection(
-              object.first,
-              aruco_node->getPose(), cov_matrix, true);
+              object.first, body_rel, cov_matrix, false);
           }
 
           GateNode * gate_node = dynamic_cast<GateNode *>(object.second);
@@ -206,13 +202,13 @@ bool OptimizerG2O::handleNewOdom(
               cov_matrix = temp_graph->computeNodeCovariance(gate_node);
               if (cov_matrix.size() == 0) { continue; }
             }
+            Eigen::Vector3d body_rel = merge_odom_pose.inverse() * gate_node->getPosition();
             object_detection = new GateDetection(
-              object.first,
-              gate_node->getPosition(), cov_matrix, true);
+              object.first, body_rel, cov_matrix, false);
           }
 
           if (!object_detection) { continue; }
-          if (!object_detection->prepareMeasurements(corrected_odometry_info)) {
+          if (!object_detection->prepareMeasurements(new_odometry_info)) {
             ERROR("Prepare detection ERROR");
             continue;
           }
@@ -222,10 +218,6 @@ bool OptimizerG2O::handleNewOdom(
            ERROR("Exception: " << e.what());
            continue;
         }
-      }
-      auto sharing = temp_graph.use_count();
-      if (sharing > 1) {
-        DEBUG("Temp graph Shared: " << sharing);
       }
     } else {
       ERROR("Temp graph optimization failed");
@@ -328,17 +320,9 @@ void OptimizerG2O::handleNewObjectDetection(
     ERROR("Prepare detection ERROR");
     return;
   }
-  
-  // std::lock_guard<std::mutex> lock(graph_mutex_);
-  std::string id = _object->getId();
-  if (detections_since_last_keyframe_.count(id) > 0) {
-    return;
-  }
-  main_graph->addNewObjectDetection(_object);
-  detections_since_last_keyframe_.insert(id);
-  // debugGraphVertices(temp_graph);
-  // temp_graph->optimizeGraph();
-  // debugGraphVertices(temp_graph);
+
+  std::lock_guard<std::mutex> lock(graph_mutex_);
+  temp_graph->addNewObjectDetection(_object);
 }
 
 void OptimizerG2O::setParameters(const OptimizerG2OParameters & _params)
