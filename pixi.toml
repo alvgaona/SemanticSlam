@@ -30,6 +30,11 @@ as2_msgs = { path = "aerostack2/as2_msgs" }
 as2_core = { path = "aerostack2/as2_core" }
 as2_msgs = { path = "aerostack2/as2_msgs" }
 
+[tasks]
+evo-traj = { cmd = "sh -c 'evo_traj bag2 \"$0\" /glim_ros_node/odom --ref /lidarodom/ground_truth/pose --plot -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
+evo-ape = { cmd = "sh -c 'evo_ape bag2 \"$0\" /lidarodom/ground_truth/pose /lidarodom/pose -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
+evo-rpe = { cmd = "sh -c 'evo_rpe bag2 \"$0\" /lidarodom/ground_truth/pose /lidarodom/pose -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
+
 [dependencies]
 pandas = ">=3.0.1,<4"
 numpy = ">=2.4.3,<3"
@@ -38,6 +43,10 @@ pyyaml = ">=6.0.3,<7"
 opencv = ">=4.13.0,<5"
 py-opencv = ">=4.13.0,<5"
 tqdm = ">=4.67.3,<5"
+ros-humble-ros2run = ">=0.18.17,<0.19"
+evo = ">=1.34.3,<2"
+pyqt6 = ">=6.8.1,<7"
+ros-humble-plotjuggler-ros = ">=2.3.1,<3"
 
 [feature.humble]
 channels = ["robostack-humble"]
