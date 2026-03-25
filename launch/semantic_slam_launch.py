@@ -40,7 +40,7 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     package_folder = get_package_share_directory(
-        'as2_slam')
+        'as2_semantic_slam')
     config_file = os.path.join(package_folder, 'config', 'config.yaml')
 
     """Launch semantic SLAM node."""
@@ -57,12 +57,12 @@ def generate_launch_description():
                                              config_file,
                                              description='Configuration file'),
         Node(
-            package='as2_slam',
+            package='as2_semantic_slam',
             namespace=LaunchConfiguration('namespace'),
-            executable='as2_slam_node',
+            executable='as2_semantic_slam_node',
             name='semantic_slam_node',
             output='screen',
-            parameters=[LaunchConfiguration('use_sim_time'),
+            parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')},
                         LaunchConfigurationFromConfigFile(
                             'config_file', default_file=config_file),
                         ],
