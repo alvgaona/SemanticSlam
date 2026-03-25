@@ -62,6 +62,7 @@
 #include <as2_core/node.hpp>
 #include "as2_slam/optimizer_g2o.hpp"
 #include "utils/conversions.hpp"
+#include "utils/csv_logger.hpp"
 
 class SemanticSlam : public as2::Node
 {
@@ -128,7 +129,8 @@ private:
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   rclcpp::TimerBase::SharedPtr initial_origin_timer_;
-  std::unique_ptr<OptimizerG2O> optimizer_ptr_;  // g2o graph
+  std::unique_ptr<OptimizerG2O> optimizer_ptr_;
+  std::unique_ptr<CsvLogger> csv_logger_;
 
   OdometryWithCovariance last_odometry_received_;
   geometry_msgs::msg::TransformStamped map_odom_transform_msg_;

@@ -48,6 +48,7 @@
 
 #include <memory>
 #include <mutex>
+#include <unordered_set>
 
 #include "as2_slam/graph_g2o.hpp"
 #include "as2_slam/object_detection_types.hpp"
@@ -70,11 +71,14 @@ struct OptimizerG2OParameters
   std::vector<FixedObject> fixed_objects;
 };
 
+class CsvLogger;
+
 class OptimizerG2O
 {
 public:
   OptimizerG2O();
   ~OptimizerG2O() {}
+  void setCsvLogger(CsvLogger * logger) { csv_logger_ = logger; }
   std::shared_ptr<GraphG2O> main_graph;
   std::shared_ptr<GraphG2O> temp_graph;
   std::mutex graph_mutex_;
@@ -127,6 +131,8 @@ private:
   bool generate_odom_map_transform_ = false;
   bool calculate_odom_covariance_ = false;
   std::vector<FixedObject> fixed_objects_;
+  std::unordered_set<std::string> detections_since_last_keyframe_;
+  CsvLogger * csv_logger_ = nullptr;
 };
 
 #endif  // AS2_SLAM__OPTIMIZER_G2O_HPP_
