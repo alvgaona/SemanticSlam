@@ -25,8 +25,10 @@ def parse_args():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--bag", type=Path, required=True)
-    parser.add_argument("--n-samples", type=int, default=200,
-                        help="Number of initial samples for calibration")
+    parser.add_argument("--n-samples", type=int, default=1000,
+                        help="Number of samples for calibration")
+    parser.add_argument("--skip", type=int, default=1000,
+                        help="Skip first N VIO samples (wait for convergence)")
     parser.add_argument("--vio-topic", default="/ov_msckf/odomimu")
     parser.add_argument("--gt-topic", default="/ground_truth/odometry")
     parser.add_argument("--storage", default="mcap")
@@ -65,9 +67,10 @@ def main():
     gt_ts = np.array(gt_ts)
     vio_ts = np.array(vio_ts)
 
-    n_calib = min(args.n_samples, len(vio_pts))
+    start = min(args.skip, len(vio_pts) - 1)
+    n_calib = min(args.n_samples, len(vio_pts) - start)
     matched_gt, matched_vio = [], []
-    for i in range(n_calib):
+    for i in range(start, start + n_calib):
         idx = np.argmin(np.abs(gt_ts - vio_ts[i]))
         matched_gt.append(gt_pts[idx])
         matched_vio.append(vio_pts[i])
