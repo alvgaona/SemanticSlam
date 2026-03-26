@@ -5,8 +5,7 @@
 - **VIO**: OpenVINS with calibrated equidistant fisheye model (averaged across 5 flights)
 - **SLAM**: G2O graph optimization with known gate positions as fixed landmarks
 - **Detections**: Synthetic gate detections from VIO poses (recomputed with correct timestamps)
-- **Evaluation**: `evo_ape` with SE(3) Umeyama alignment, and custom `evaluate_slam.py` with per-flight
-  earth_to_map SVD calibration (skip=1000 VIO samples)
+- **Evaluation**: `evaluate_slam.py` with per-flight earth_to_map SVD calibration (skip=1000 VIO samples)
 
 ## Configuration
 
@@ -42,16 +41,6 @@ Per-flight `earth_to_map` calibration (SVD, skip=1000):
 
 Detections routed directly to main graph. Throttled to 1 detection per gate per main keyframe.
 
-### evo_ape (SE(3) Umeyama alignment)
-
-| Flight | VIO RMSE (m) | Corrected RMSE (m) | Improvement |
-|--------|-------------|--------------------|-----------:|
-| 01p    | 0.984       | 0.973              |      +1.1% |
-| 02p    | 0.564       | 0.577              |      -2.3% |
-| 03p    | 0.729       | 0.666              |      +8.6% |
-
-### evaluate_slam.py (per-flight earth_to_map calibration)
-
 | Flight | Metric | VIO RMSE (m) | Corrected RMSE (m) | Improvement |
 |--------|--------|-------------|--------------------|-----------:|
 | 01p    | 3D     | 1.635       | 1.286              |     +21.4% |
@@ -72,11 +61,36 @@ Detections routed directly to main graph. Throttled to 1 detection per gate per 
 | 02p    | 0.718   | 0.624         |     +13.1% |
 | 03p    | 1.010   | 0.788         |     +22.0% |
 
+## Dual-Graph Results
+
+Detections routed to temp graph (gates as free nodes), optimized, then merged to main graph as absolute
+measurements with covariance from graph marginals. Key fix: `setFixedObjects` removed from temp graph so
+gate positions are freely estimated from observations rather than fixed.
+
+### evaluate_slam.py (per-flight earth_to_map calibration)
+
+| Flight | Metric | VIO RMSE (m) | Corrected RMSE (m) | Improvement |
+|--------|--------|-------------|--------------------|-----------:|
+| 01p    | 3D     | 1.635       | 1.268              |     +22.4% |
+| 01p    | XY     | 1.332       | 1.055              |     +20.8% |
+| 01p    | Z      | 0.947       | 0.703              |     +25.7% |
+| 02p    | 3D     | 0.739       | 0.665              |     +10.0% |
+| 02p    | XY     | 0.647       | 0.589              |      +9.1% |
+| 02p    | Z      | 0.356       | 0.309              |     +13.1% |
+| 03p    | 3D     | 1.009       | 0.780              |     +22.7% |
+| 03p    | XY     | 0.885       | 0.674              |     +23.9% |
+| 03p    | Z      | 0.485       | 0.393              |     +19.0% |
+
+### Summary (evaluate_slam.py, 3D RMSE)
+
+| Flight | VIO (m) | Corrected (m) | Single-graph | Dual-graph |
+|--------|---------|---------------|--------------|------------|
+| 01p    | 1.635   | 1.268         |       +21.4% |     +22.4% |
+| 02p    | 0.739   | 0.665         |       +13.1% |     +10.0% |
+| 03p    | 1.009   | 0.780         |       +22.0% |     +22.7% |
+
 ## Notes
 
-- **evo vs evaluate_slam.py**: evo uses optimal SE(3) Umeyama alignment (best possible alignment for both
-  trajectories). evaluate_slam.py uses a fixed earth_to_map calibration per flight. evo gives a stricter,
-  more conservative improvement number.
 - **Per-flight calibration**: earth_to_map must be computed per flight because OpenVINS initializes with
   an arbitrary heading. The calibration script (`scripts/calibrate_earth_to_map.py`) must skip the first
   ~1000 VIO samples to avoid unconverged estimates.
