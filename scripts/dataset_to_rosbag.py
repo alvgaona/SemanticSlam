@@ -145,6 +145,30 @@ def resolve_paths(dataset_dir: Path) -> DatasetPaths:
     return paths
 
 
+CALIBRATED_INTRINSICS = {
+    "fx": 291.520, "fy": 390.011, "cx": 316.447, "cy": 240.442,
+    "distortion_model": "equidistant",
+    "d": [0.0478, -0.0282, 0.0376, -0.0184],
+}
+
+
+def make_camera_info(width: int = 640, height: int = 480) -> CameraInfo:
+    fx = CALIBRATED_INTRINSICS["fx"]
+    fy = CALIBRATED_INTRINSICS["fy"]
+    cx = CALIBRATED_INTRINSICS["cx"]
+    cy = CALIBRATED_INTRINSICS["cy"]
+
+    msg = CameraInfo()
+    msg.width = width
+    msg.height = height
+    msg.distortion_model = CALIBRATED_INTRINSICS["distortion_model"]
+    msg.d = CALIBRATED_INTRINSICS["d"]
+    msg.k = [fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0]
+    msg.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    msg.p = [fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0]
+    return msg
+
+
 def ts_us_to_ros(timestamp_us: int) -> Time:
     t = Time()
     t.sec = int(timestamp_us // 1_000_000)
@@ -480,14 +504,7 @@ def write_static_camera_preamble(
 
     width = metadata.get("camera", {}).get("image_width", 640)
     height = metadata.get("camera", {}).get("image_height", 480)
-    camera_info = CameraInfo()
-    camera_info.width = width
-    camera_info.height = height
-    camera_info.distortion_model = "plumb_bob"
-    camera_info.d = [0.0, 0.0, 0.0, 0.0, 0.0]
-    camera_info.k = [0.0] * 9
-    camera_info.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
-    camera_info.p = [0.0] * 12
+    camera_info = make_camera_info(width, height)
 
     img_msg_template = Image()
     img_msg_template.height = first_img.shape[0]
@@ -538,13 +555,13 @@ def write_camera_messages(
     if undistort_maps is not None:
         map1, map2, new_mtx = undistort_maps
 
-    camera_info = CameraInfo()
-    camera_info.width = width
-    camera_info.height = height
-    camera_info.distortion_model = "plumb_bob"
-    camera_info.d = [0.0, 0.0, 0.0, 0.0, 0.0]
-    camera_info.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
     if new_mtx is not None:
+        camera_info = CameraInfo()
+        camera_info.width = width
+        camera_info.height = height
+        camera_info.distortion_model = "plumb_bob"
+        camera_info.d = [0.0, 0.0, 0.0, 0.0, 0.0]
+        camera_info.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
         camera_info.k = new_mtx.flatten().tolist()
         camera_info.p = [
             new_mtx[0, 0], 0.0, new_mtx[0, 2], 0.0,
@@ -552,8 +569,7 @@ def write_camera_messages(
             0.0, 0.0, 1.0, 0.0,
         ]
     else:
-        camera_info.k = [0.0] * 9
-        camera_info.p = [0.0] * 12
+        camera_info = make_camera_info(width, height)
 
     count = 0
     for _, row in df.iterrows():
