@@ -539,13 +539,13 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-ng-2.3.3-hceb46e0_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.25.0-py312h5253ce2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
-      - conda: .
-        build: hb0f4dca_0
       - conda: aerostack2/as2_core
         build: hb0f4dca_0
       - conda: aerostack2/as2_msgs
         build: hb0f4dca_0
       - conda: drone-racing-msgs/drone_racing_msgs
+        build: hb0f4dca_0
+      - conda: dual_pose_graph
         build: hb0f4dca_0
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -999,13 +999,13 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-ng-2.3.3-hed4e4f5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.25.0-py312h37e1c23_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
-      - conda: .
-        build: h60d57d3_0
       - conda: aerostack2/as2_core
         build: h60d57d3_0
       - conda: aerostack2/as2_msgs
         build: h60d57d3_0
       - conda: drone-racing-msgs/drone_racing_msgs
+        build: h60d57d3_0
+      - conda: dual_pose_graph
         build: h60d57d3_0
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -8811,80 +8811,6 @@ packages:
   license: Apache-2.0
   size: 47258
   timestamp: 1773554662230
-- conda: .
-  name: ros-humble-as2-semantic-slam
-  version: 1.0.6
-  build: h60d57d3_0
-  subdir: osx-arm64
-  variants:
-    target_platform: osx-arm64
-  depends:
-  - as2_core
-  - as2_msgs
-  - ros-humble-ament-cmake
-  - ros-humble-rclcpp
-  - ros-humble-nav-msgs
-  - ros-humble-geometry-msgs
-  - ros-humble-visualization-msgs
-  - ros-humble-tf2
-  - ros-humble-tf2-ros
-  - ros-humble-pluginlib
-  - ros-humble-backward-ros
-  - fmt
-  - fmt >=12.1.0,<12.2.0a0
-  - ros-humble-libg2o
-  - ceres-solver
-  - ceres-solver >=2.2.0,<2.3.0a0
-  - ros2-distro-mutex
-  - ros2-distro-mutex >=0.8.0,<0.9.0a0
-  - libcxx >=22
-  - eigen >=3.4.0,<3.4.1.0a0
-  - python_abi 3.12.* *_cp312
-  - numpy >=1.23,<3
-  license: LicenseRef-BDS-3-Clause
-  sources:
-    as2_core:
-      path: aerostack2/as2_core
-    as2_msgs:
-      path: aerostack2/as2_msgs
-- conda: .
-  name: ros-humble-as2-semantic-slam
-  version: 1.0.6
-  build: hb0f4dca_0
-  subdir: linux-64
-  variants:
-    target_platform: linux-64
-  depends:
-  - as2_core
-  - as2_msgs
-  - ros-humble-ament-cmake
-  - ros-humble-rclcpp
-  - ros-humble-nav-msgs
-  - ros-humble-geometry-msgs
-  - ros-humble-visualization-msgs
-  - ros-humble-tf2
-  - ros-humble-tf2-ros
-  - ros-humble-pluginlib
-  - ros-humble-backward-ros
-  - fmt
-  - fmt >=12.1.0,<12.2.0a0
-  - ros-humble-libg2o
-  - ceres-solver
-  - ceres-solver >=2.2.0,<2.3.0a0
-  - ros2-distro-mutex
-  - ros2-distro-mutex >=0.8.0,<0.9.0a0
-  - libgcc >=15
-  - libgcc >=15
-  - libstdcxx >=15
-  - eigen >=3.4.0,<3.4.1.0a0
-  - python_abi 3.12.* *_cp312
-  - numpy >=1.23,<3
-  license: LicenseRef-BDS-3-Clause
-  sources:
-    as2_core:
-      path: aerostack2/as2_core
-    as2_msgs:
-      path: aerostack2/as2_msgs
 - conda: https://conda.anaconda.org/robostack-humble/linux-64/ros-humble-backward-ros-1.0.8-np2py312h2ed9cc7_15.conda
   sha256: e84464c8d816324302ffaa4a366e7f6a0af9c44a5772a941040684390a936116
   md5: 705f1dc5b47d6144a1c3c889d3d6381f
@@ -9261,6 +9187,80 @@ packages:
   license: Apache-2.0
   size: 21204
   timestamp: 1773556631678
+- conda: dual_pose_graph
+  name: ros-humble-dual-pose-graph
+  version: 1.0.6
+  build: h60d57d3_0
+  subdir: osx-arm64
+  variants:
+    target_platform: osx-arm64
+  depends:
+  - as2_core
+  - as2_msgs
+  - ros-humble-ament-cmake
+  - ros-humble-rclcpp
+  - ros-humble-nav-msgs
+  - ros-humble-geometry-msgs
+  - ros-humble-visualization-msgs
+  - ros-humble-tf2
+  - ros-humble-tf2-ros
+  - ros-humble-pluginlib
+  - ros-humble-backward-ros
+  - fmt
+  - fmt >=12.1.0,<12.2.0a0
+  - ros-humble-libg2o
+  - ceres-solver
+  - ceres-solver >=2.2.0,<2.3.0a0
+  - ros2-distro-mutex
+  - ros2-distro-mutex >=0.8.0,<0.9.0a0
+  - libcxx >=22
+  - eigen >=3.4.0,<3.4.1.0a0
+  - python_abi 3.12.* *_cp312
+  - numpy >=1.23,<3
+  license: LicenseRef-BDS-3-Clause
+  sources:
+    as2_core:
+      path: ../aerostack2/as2_core
+    as2_msgs:
+      path: ../aerostack2/as2_msgs
+- conda: dual_pose_graph
+  name: ros-humble-dual-pose-graph
+  version: 1.0.6
+  build: hb0f4dca_0
+  subdir: linux-64
+  variants:
+    target_platform: linux-64
+  depends:
+  - as2_core
+  - as2_msgs
+  - ros-humble-ament-cmake
+  - ros-humble-rclcpp
+  - ros-humble-nav-msgs
+  - ros-humble-geometry-msgs
+  - ros-humble-visualization-msgs
+  - ros-humble-tf2
+  - ros-humble-tf2-ros
+  - ros-humble-pluginlib
+  - ros-humble-backward-ros
+  - fmt
+  - fmt >=12.1.0,<12.2.0a0
+  - ros-humble-libg2o
+  - ceres-solver
+  - ceres-solver >=2.2.0,<2.3.0a0
+  - ros2-distro-mutex
+  - ros2-distro-mutex >=0.8.0,<0.9.0a0
+  - libgcc >=15
+  - libgcc >=15
+  - libstdcxx >=15
+  - eigen >=3.4.0,<3.4.1.0a0
+  - python_abi 3.12.* *_cp312
+  - numpy >=1.23,<3
+  license: LicenseRef-BDS-3-Clause
+  sources:
+    as2_core:
+      path: ../aerostack2/as2_core
+    as2_msgs:
+      path: ../aerostack2/as2_msgs
 - conda: https://conda.anaconda.org/robostack-humble/linux-64/ros-humble-eigen3-cmake-module-0.1.1-np2py312h2ed9cc7_15.conda
   sha256: 1079f2aa07bb172852838c1309b5dac1f6ea6ad949634dabb2792be0a81e3cc7
   md5: 79151b9d6882ebf34b4a53b176e56bc3

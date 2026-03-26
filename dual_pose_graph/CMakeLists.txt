@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-set(PROJECT_NAME as2_semantic_slam)
+set(PROJECT_NAME dual_pose_graph)
 project(${PROJECT_NAME} VERSION 1.0.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -42,7 +42,6 @@ endforeach()
 include_directories(
   include
   include/${PROJECT_NAME}
-  include/as2_slam
 )
 
 # G2O (depends on ceres which depends on glog)

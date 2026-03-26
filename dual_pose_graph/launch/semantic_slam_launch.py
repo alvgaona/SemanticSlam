@@ -40,10 +40,10 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     package_folder = get_package_share_directory(
-        'as2_semantic_slam')
+        'dual_pose_graph')
     config_file = os.path.join(package_folder, 'config', 'config.yaml')
 
-    """Launch semantic SLAM node."""
+    """Launch dual pose graph SLAM node."""
     return LaunchDescription([
         DeclareLaunchArgument('namespace',
                               description='Drone namespace',
@@ -57,10 +57,10 @@ def generate_launch_description():
                                              config_file,
                                              description='Configuration file'),
         Node(
-            package='as2_semantic_slam',
+            package='dual_pose_graph',
             namespace=LaunchConfiguration('namespace'),
-            executable='as2_semantic_slam_node',
-            name='semantic_slam_node',
+            executable='dual_pose_graph_node',
+            name='dual_pose_graph_node',
             output='screen',
             parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')},
                         LaunchConfigurationFromConfigFile(

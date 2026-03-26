@@ -35,7 +35,7 @@
  *         Miguel Fernández Cortizas
  */
 
-#include "as2_slam/semantic_slam.hpp"
+#include "dual_pose_graph/semantic_slam.hpp"
 #include <Eigen/src/Core/Matrix.h>
 #include <Eigen/src/Geometry/Transform.h>
 #include <eigen3/Eigen/src/Geometry/Transform.h>
@@ -48,10 +48,10 @@
 #include <string>
 #include <vector>
 
-#include "as2_slam/graph_node_types.hpp"
+#include "dual_pose_graph/graph_node_types.hpp"
 #include "optimizer_g2o.hpp"
 #include "utils/conversions.hpp"
-#include "as2_slam/object_detection_types.hpp"
+#include "dual_pose_graph/object_detection_types.hpp"
 #include "utils/debug_utils.hpp"
 #include "utils/general_utils.hpp"
 

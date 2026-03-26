@@ -1,0 +1,23 @@
+[package]
+name = "ros-humble-dual-pose-graph"
+version = "1.0.6"
+
+[package.build]
+backend = { name = "pixi-build-ros", version = "*" }
+
+[package.build.config]
+extra-package-mappings = [
+    { g2o = { ros = ["libg2o"] } },
+    { as2_core = { conda = [] } },
+    { as2_msgs = { conda = [] } },
+    { libfmt = { conda = ["fmt"] } },
+    { ceres = { conda = ["ceres-solver"] } },
+]
+
+[package.host-dependencies]
+as2_core = { path = "../aerostack2/as2_core" }
+as2_msgs = { path = "../aerostack2/as2_msgs" }
+
+[package.run-dependencies]
+as2_core = { path = "../aerostack2/as2_core" }
+as2_msgs = { path = "../aerostack2/as2_msgs" }

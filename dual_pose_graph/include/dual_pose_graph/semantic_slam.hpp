@@ -60,7 +60,7 @@
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 
 #include <as2_core/node.hpp>
-#include "as2_slam/optimizer_g2o.hpp"
+#include "dual_pose_graph/optimizer_g2o.hpp"
 #include "utils/conversions.hpp"
 #include "utils/csv_logger.hpp"
 
