@@ -41,20 +41,5 @@ ros-humble-dual-pose-graph = { path = "dual_pose_graph" }
 ros-humble-rosbag2-storage-mcap = ">=0.15.16,<0.16"
 ros-humble-rosbag2 = ">=0.15.16,<0.16"
 
-[feature.train]
-channels = ["conda-forge", "pytorch", "robostack-humble", "https://prefix.dev/aerostack2"]
-
-[feature.train.dependencies]
-pytorch = ">=2.0"
-torchvision = ">=0.15"
-pytorch-lightning = ">=2.0"
-scikit-image = ">=0.21"
-scikit-learn = ">=1.3"
-detect_gates = { path = "thirdparty/gate_perception/detect_gates" }
-perspective_n_points = { path = "thirdparty/gate_perception/perspective_n_points" }
-process_detections = { path = "thirdparty/gate_perception/process_detections" }
-gate_perception_msgs = { path = "thirdparty/gate_perception/gate_perception_msgs" }
-
 [environments]
 default = ["humble"]
-train = { features = ["train"], no-default-feature = true }
