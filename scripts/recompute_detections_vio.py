@@ -54,6 +54,7 @@ def parse_args():
     parser.add_argument("--output-bag", type=Path, required=True)
     parser.add_argument("--detection-range", type=float, default=15.0)
     parser.add_argument("--storage", choices=["mcap", "sqlite3"], default="mcap")
+    parser.add_argument("--input-storage", choices=["mcap", "sqlite3"], default="mcap")
     return parser.parse_args()
 
 
@@ -66,7 +67,7 @@ def main():
 
     reader = rosbag2_py.SequentialReader()
     reader.open(
-        rosbag2_py.StorageOptions(uri=str(args.input_bag), storage_id="mcap"),
+        rosbag2_py.StorageOptions(uri=str(args.input_bag), storage_id=args.input_storage),
         rosbag2_py.ConverterOptions(
             input_serialization_format="cdr", output_serialization_format="cdr"
         ),
@@ -108,7 +109,7 @@ def main():
     del reader
     reader = rosbag2_py.SequentialReader()
     reader.open(
-        rosbag2_py.StorageOptions(uri=str(args.input_bag), storage_id="mcap"),
+        rosbag2_py.StorageOptions(uri=str(args.input_bag), storage_id=args.input_storage),
         rosbag2_py.ConverterOptions(
             input_serialization_format="cdr", output_serialization_format="cdr"
         ),

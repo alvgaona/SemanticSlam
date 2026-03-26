@@ -29,6 +29,8 @@ def parse_args():
     parser.add_argument("--e2m-rpy", type=float, nargs=3,
                         default=[0.008312, -0.001632, -3.125066],
                         help="earth_to_map rotation (roll pitch yaw)")
+    parser.add_argument("--max-time", type=float, default=None,
+                        help="Evaluate only the first N seconds")
     return parser.parse_args()
 
 
@@ -48,7 +50,10 @@ def main():
     errors = {"raw_3d": [], "cor_3d": [], "raw_xy": [], "cor_xy": [],
               "raw_z": [], "cor_z": []}
 
+    t0 = odom_ts.iloc[0]
     for i in range(len(odom)):
+        if args.max_time is not None and (odom_ts.iloc[i] - t0) > args.max_time:
+            break
         idx = np.argmin(np.abs(gt_ts.values - odom_ts.iloc[i]))
         cor = np.array([odom.iloc[i].cor_x, odom.iloc[i].cor_y, odom.iloc[i].cor_z])
         raw = np.array([odom.iloc[i].raw_x, odom.iloc[i].raw_y, odom.iloc[i].raw_z])
