@@ -1,6 +1,7 @@
 /**:
   ros__parameters:
     odometry_topic: "/ov_msckf/odomimu"
+    pose_topic: ""
     detections_topic: "/detections/gates"
     corrected_localization_topic: "slam/corrected_localization"
     corrected_path_topic: "slam/corrected_path"
@@ -17,12 +18,12 @@
     odometry_is_relative: false
     generate_odom_map_transform: true
     earth_to_map:
-      x: -0.793400
-      y: -1.122114
-      z: -0.513168
-      roll: 0.020519
-      pitch: -0.059699
-      yaw: -3.101762
+      x: -0.478439
+      y: -1.650299
+      z: 0.027741
+      roll: 0.007052
+      pitch: -0.016421
+      yaw: 3.113635
     visualize_graphs: true
     map_odom_security_threshold: 5.0
     calculate_odom_covariance: true
@@ -35,6 +36,7 @@
     detection_covariance_by_distance2: false
     detection_covariance_factor: 0.1
     detection_orientation_covariance_factor: 1.0
+    throttle_detections: true
     force_object_type: "aruco"
     fixed_objects:
       gate_1:
