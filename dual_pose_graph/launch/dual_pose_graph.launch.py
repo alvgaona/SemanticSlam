@@ -12,7 +12,7 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     package_folder = get_package_share_directory('dual_pose_graph')
-    config_file = os.path.join(package_folder, 'config', 'config.yaml')
+    config_file = os.path.join(package_folder, 'config', 'tii_config.yaml')
 
     namespace_arg = DeclareLaunchArgument(
         'namespace', description='Drone namespace', default_value='drone')

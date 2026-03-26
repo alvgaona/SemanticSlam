@@ -331,11 +331,13 @@ void OptimizerG2O::handleNewObjectDetection(
   
   // std::lock_guard<std::mutex> lock(graph_mutex_);
   std::string id = _object->getId();
-  if (detections_since_last_keyframe_.count(id) > 0) {
-    return;
+  if (throttle_detections_) {
+    if (detections_since_last_keyframe_.count(id) > 0) {
+      return;
+    }
+    detections_since_last_keyframe_.insert(id);
   }
   main_graph->addNewObjectDetection(_object);
-  detections_since_last_keyframe_.insert(id);
   // debugGraphVertices(temp_graph);
   // temp_graph->optimizeGraph();
   // debugGraphVertices(temp_graph);
@@ -356,6 +358,7 @@ void OptimizerG2O::setParameters(const OptimizerG2OParameters & _params)
   map_odom_transform_alpha_ = _params.map_odom_transform_alpha;
   earth_map_transform_ = initial_earth_to_map_transform_;
   calculate_odom_covariance_ = _params.calculate_odom_covariance_;
+  throttle_detections_ = _params.throttle_detections;
 
   PARAM(PRINT_VAR(main_graph_odometry_distance_threshold_));
   PARAM(PRINT_VAR(temp_graph_odometry_distance_threshold_));

@@ -67,6 +67,7 @@ struct OptimizerG2OParameters
   bool odometry_is_relative;
   bool generate_odom_map_transform;
   bool calculate_odom_covariance_;
+  bool throttle_detections;
   Eigen::Isometry3d earth_to_map_transform;
   std::vector<FixedObject> fixed_objects;
 };
@@ -130,6 +131,7 @@ private:
   bool odometry_is_relative_ = false;
   bool generate_odom_map_transform_ = false;
   bool calculate_odom_covariance_ = false;
+  bool throttle_detections_ = true;
   std::vector<FixedObject> fixed_objects_;
   std::unordered_set<std::string> detections_since_last_keyframe_;
   CsvLogger * csv_logger_ = nullptr;

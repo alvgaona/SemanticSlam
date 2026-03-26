@@ -623,6 +623,12 @@ OptimizerG2OParameters SemanticSlam::getOptimizerParameters() {
     "map_odom_transform_alpha").as_double();
   optimizer_params.calculate_odom_covariance_ = this->get_parameter(
     "calculate_odom_covariance").as_bool();
+  if (this->has_parameter("throttle_detections")) {
+    optimizer_params.throttle_detections = this->get_parameter(
+      "throttle_detections").as_bool();
+  } else {
+    optimizer_params.throttle_detections = true;
+  }
 
   double earth_to_map_x = 0.0;
   double earth_to_map_y = 0.0;
