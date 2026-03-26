@@ -1,6 +1,6 @@
 [submodule "aerostack2"]
-	path = aerostack2
+	path = thirdparty/aerostack2
 	url = https://github.com/aerostack2/aerostack2.git
 [submodule "drone-racing-msgs"]
-	path = drone-racing-msgs
+	path = thirdparty/drone-racing-msgs
 	url = https://github.com/tii-racing/drone-racing-msgs.git

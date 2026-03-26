@@ -15,9 +15,9 @@ extra-package-mappings = [
 ]
 
 [package.host-dependencies]
-as2_core = { path = "../aerostack2/as2_core" }
-as2_msgs = { path = "../aerostack2/as2_msgs" }
+as2_core = { path = "../thirdparty/aerostack2/as2_core" }
+as2_msgs = { path = "../thirdparty/aerostack2/as2_msgs" }
 
 [package.run-dependencies]
-as2_core = { path = "../aerostack2/as2_core" }
-as2_msgs = { path = "../aerostack2/as2_msgs" }
+as2_core = { path = "../thirdparty/aerostack2/as2_core" }
+as2_msgs = { path = "../thirdparty/aerostack2/as2_msgs" }
