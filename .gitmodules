@@ -4,3 +4,6 @@
 [submodule "drone-racing-msgs"]
 	path = thirdparty/drone-racing-msgs
 	url = https://github.com/tii-racing/drone-racing-msgs.git
+[submodule "thirdparty/gate_perception"]
+	path = thirdparty/gate_perception
+	url = https://github.com/CVAR-A2RL/gate_perception.git
