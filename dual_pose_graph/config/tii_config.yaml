@@ -18,12 +18,12 @@
     odometry_is_relative: false
     generate_odom_map_transform: true
     earth_to_map:
-      x: -0.478439
-      y: -1.650299
-      z: 0.027741
-      roll: 0.007052
-      pitch: -0.016421
-      yaw: 3.113635
+      x: -1.406033
+      y: -0.483775
+      z: -0.221366
+      roll: -0.047179
+      pitch: -0.023153
+      yaw: -3.107700
     visualize_graphs: true
     map_odom_security_threshold: 5.0
     calculate_odom_covariance: true
@@ -41,7 +41,7 @@
     fixed_objects:
       gate_1:
         type: "aruco"
-        pose: [4.0, 1.3, 1.13, 3.14]
+        pose: [4.0, 1.3, 1.13, 0.0]
       gate_2:
         type: "aruco"
         pose: [4.0, -1.34, 1.16, 0.0]
@@ -50,4 +50,4 @@
         pose: [-4.0, -1.29, 1.16, 0.0]
       gate_4:
         type: "aruco"
-        pose: [-3.97, 1.28, 1.17, 3.14]
+        pose: [-3.97, 1.28, 1.17, 0.0]

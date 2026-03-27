@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import json
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -29,6 +28,8 @@ from geometry_msgs.msg import (
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import CameraInfo, Image, Imu
 from std_msgs.msg import Header
+from geometry_msgs.msg import TransformStamped
+from tf2_msgs.msg import TFMessage
 from visualization_msgs.msg import Marker, MarkerArray
 
 from as2_msgs.msg import PoseStampedWithID, PoseStampedWithIDArray
@@ -70,26 +71,9 @@ def parse_args():
         help="Bag storage format (default: mcap)",
     )
     parser.add_argument(
-        "--no-images",
-        action="store_true",
-        help="Skip camera images for fast debug",
-    )
-    parser.add_argument(
-        "--image-encoding",
-        choices=["bgr8", "mono8"],
-        default="bgr8",
-        help="Image encoding (default: bgr8)",
-    )
-    parser.add_argument(
         "--compress",
         action="store_true",
         help="Enable zstd compression (mcap only)",
-    )
-    parser.add_argument(
-        "--undistort",
-        type=Path,
-        default=None,
-        help="Path to calibration JSON to rectify fisheye images to pinhole",
     )
     parser.add_argument(
         "--detection-range",
@@ -102,6 +86,11 @@ def parse_args():
         type=float,
         default=0.0,
         help="Prepend N seconds of static data (repeat first frame/IMU) before real data",
+    )
+    parser.add_argument(
+        "--no-images",
+        action="store_true",
+        help="Skip camera images",
     )
     parser.add_argument(
         "--camera-skip",
@@ -175,6 +164,101 @@ def make_camera_info(width: int = 640, height: int = 480) -> CameraInfo:
     return msg
 
 
+def write_camera_messages(
+    writer: rosbag2_py.SequentialWriter,
+    camera_csv: Path,
+    image_dir: Path,
+    metadata: dict,
+    camera_skip: int = 0,
+) -> int:
+    from concurrent.futures import ThreadPoolExecutor
+    from collections import deque
+
+    print(f"Writing camera images from {image_dir.name}/...")
+    df = pd.read_csv(camera_csv)
+    width = metadata.get("camera", {}).get("image_width", 640)
+    height = metadata.get("camera", {}).get("image_height", 480)
+    camera_info_template = make_camera_info(width, height)
+
+    if camera_skip > 0:
+        df = df.iloc[::camera_skip + 1].reset_index(drop=True)
+
+    def load_and_serialize(row):
+        img_path = image_dir / row["filename"]
+        if not img_path.exists():
+            return None
+
+        ts = int(row["timestamp"])
+        header = make_header(ts, "camera")
+
+        img = cv2.imread(str(img_path))
+        if img is None:
+            return None
+        img_msg = Image()
+        img_msg.header = header
+        img_msg.height = img.shape[0]
+        img_msg.width = img.shape[1]
+        img_msg.encoding = "bgr8"
+        img_msg.is_bigendian = False
+        img_msg.step = img.shape[1] * 3
+        img_msg.data = img.tobytes()
+
+        ci = CameraInfo()
+        ci.header = header
+        ci.width = camera_info_template.width
+        ci.height = camera_info_template.height
+        ci.distortion_model = camera_info_template.distortion_model
+        ci.d = camera_info_template.d
+        ci.k = camera_info_template.k
+        ci.r = camera_info_template.r
+        ci.p = camera_info_template.p
+
+        return (
+            ts_us_to_ns(ts),
+            serialize_message(img_msg),
+            serialize_message(ci),
+        )
+
+    count = 0
+    total = len(df)
+    prefetch = 128
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = deque()
+        row_iter = df.iterrows()
+
+        for _ in range(prefetch):
+            try:
+                _, row = next(row_iter)
+                futures.append(pool.submit(load_and_serialize, row))
+            except StopIteration:
+                break
+
+        while futures:
+            future = futures.popleft()
+
+            try:
+                _, row = next(row_iter)
+                futures.append(pool.submit(load_and_serialize, row))
+            except StopIteration:
+                pass
+
+            result = future.result()
+            if result is None:
+                continue
+
+            ts_ns, img_data, ci_data = result
+            writer.write("/camera/image_raw", img_data, ts_ns)
+            writer.write("/camera/camera_info", ci_data, ts_ns)
+            count += 1
+
+            if count % 1000 == 0:
+                print(f"  Camera: {count}/{total} images...")
+
+    print(f"  Camera: {count} images")
+    return count
+
+
 def ts_us_to_ros(timestamp_us: int) -> Time:
     t = Time()
     t.sec = int(timestamp_us // 1_000_000)
@@ -225,6 +309,8 @@ def create_writer(
         ("/ground_truth/odometry", "nav_msgs/msg/Odometry"),
         ("/ground_truth/gates", "visualization_msgs/msg/MarkerArray"),
         ("/detections/gates", "as2_msgs/msg/PoseStampedWithIDArray"),
+        ("/detections/markers/gates", "visualization_msgs/msg/MarkerArray"),
+        ("/tf_static", "tf2_msgs/msg/TFMessage"),
     ]
 
     for topic_name, topic_type in topics:
@@ -339,11 +425,11 @@ def write_ground_truth_from_bag(
         t = int(src.timestamp)
 
         pose_msg = PoseStamped()
-        pose_msg.header = make_header(t, "world")
+        pose_msg.header = make_header(t, "earth")
         pose_msg.pose = src.pose
 
         odom_msg = Odometry()
-        odom_msg.header = make_header(t, "world")
+        odom_msg.header = make_header(t, "earth")
         odom_msg.child_frame_id = "base_link"
         odom_msg.pose = PoseWithCovariance(pose=src.pose)
         odom_msg.twist = TwistWithCovariance(twist=src.velocity)
@@ -373,7 +459,7 @@ def write_ground_truth(
         ts = int(row["timestamp"])
 
         pose_msg = PoseStamped()
-        pose_msg.header = make_header(ts, "world")
+        pose_msg.header = make_header(ts, "earth")
         pose_msg.pose = Pose(
             position=Point(
                 x=float(row["pose_position_x"]),
@@ -389,7 +475,7 @@ def write_ground_truth(
         )
 
         odom_msg = Odometry()
-        odom_msg.header = make_header(ts, "world")
+        odom_msg.header = make_header(ts, "earth")
         odom_msg.child_frame_id = "base_link"
         odom_msg.pose = PoseWithCovariance(pose=pose_msg.pose)
         odom_msg.twist = TwistWithCovariance(
@@ -413,217 +499,6 @@ def write_ground_truth(
         count += 1
 
     print(f"  Ground truth: {count} messages (pose + odometry)")
-    return count
-
-
-def load_undistort_maps(calib_path: Path, width: int, height: int):
-    with open(calib_path) as f:
-        calib = json.load(f)
-
-    if calib.get("model") == "fisheye" or calib.get("fisheye"):
-        K = np.array(calib["mtx"], dtype=np.float64)
-        D = np.array(calib.get("dist_fisheye", [0.0, 0.0, 0.0, 0.0]),
-                      dtype=np.float64).reshape(4, 1)
-    else:
-        metadata_path = calib_path.parent.parent / "piloted"
-        fov_h = calib.get("fov_horizontal", 155)
-        fov_v = calib.get("fov_vertical", 115)
-        import math
-        fx = (width / 2.0) / math.radians(fov_h / 2.0)
-        fy = (height / 2.0) / math.radians(fov_v / 2.0)
-        K = np.array([
-            [fx, 0, width / 2.0],
-            [0, fy, height / 2.0],
-            [0, 0, 1],
-        ], dtype=np.float64)
-        D = np.zeros((4, 1), dtype=np.float64)
-
-    new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
-        K, D, (width, height), np.eye(3), balance=0.0,
-    )
-    map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-        K, D, np.eye(3), new_K, (width, height), cv2.CV_16SC2,
-    )
-    print(f"  Undistort (fisheye): {calib_path.name}")
-    print(f"  Equidistant intrinsics: fx={K[0,0]:.2f} fy={K[1,1]:.2f} cx={K[0,2]:.2f} cy={K[1,2]:.2f}")
-    print(f"  New pinhole intrinsics: fx={new_K[0,0]:.2f} fy={new_K[1,1]:.2f} cx={new_K[0,2]:.2f} cy={new_K[1,2]:.2f}")
-    return map1, map2, new_K
-
-
-def write_static_camera_preamble(
-    writer: rosbag2_py.SequentialWriter,
-    paths: DatasetPaths,
-    metadata: dict,
-    encoding: str,
-    undistort_maps=None,
-) -> int:
-    if not paths.original_bag.exists():
-        return 0
-
-    imu_csv = pd.read_csv(paths.imu_csv, nrows=1)
-    cam_csv = pd.read_csv(paths.camera_csv, nrows=1)
-    imu_start_us = int(imu_csv["timestamp"].iloc[0])
-    cam_start_us = int(cam_csv["timestamp"].iloc[0])
-
-    gap_us = cam_start_us - imu_start_us
-    if gap_us < 500_000:
-        return 0
-
-    from rosidl_runtime_py.utilities import get_message
-
-    reader = rosbag2_py.SequentialReader()
-    reader.open(
-        rosbag2_py.StorageOptions(uri=str(paths.original_bag), storage_id="sqlite3"),
-        rosbag2_py.ConverterOptions(
-            input_serialization_format="cdr", output_serialization_format="cdr"
-        ),
-    )
-    topics = reader.get_all_topics_and_types()
-    type_map = {t.name: t.type for t in topics}
-    reader.set_filter(
-        rosbag2_py.StorageFilter(topics=["/sensors/imu"])
-    )
-    msg_type = get_message(type_map["/sensors/imu"])
-    first_msg = None
-    while reader.has_next():
-        _, data, _ = reader.read_next()
-        first_msg = deserialize_message(data, msg_type)
-        break
-    del reader
-
-    if first_msg is None:
-        return 0
-
-    bag_imu_start_us = int(first_msg.timestamp)
-
-    first_img_path = paths.image_dir / cam_csv["filename"].iloc[0]
-    first_img = cv2.imread(str(first_img_path))
-    if first_img is None:
-        return 0
-
-    if undistort_maps is not None:
-        map1, map2, _ = undistort_maps
-        first_img = cv2.remap(first_img, map1, map2, cv2.INTER_LINEAR)
-
-    if encoding == "mono8":
-        first_img = cv2.cvtColor(first_img, cv2.COLOR_BGR2GRAY)
-
-    width = metadata.get("camera", {}).get("image_width", 640)
-    height = metadata.get("camera", {}).get("image_height", 480)
-    camera_info = make_camera_info(width, height)
-
-    img_msg_template = Image()
-    img_msg_template.height = first_img.shape[0]
-    img_msg_template.width = first_img.shape[1]
-    img_msg_template.encoding = encoding
-    img_msg_template.is_bigendian = False
-    if encoding == "mono8":
-        img_msg_template.step = first_img.shape[1]
-    else:
-        img_msg_template.step = first_img.shape[1] * 3
-    img_msg_template.data = first_img.tobytes()
-
-    cam_dt_us = 33333
-    t = bag_imu_start_us
-    count = 0
-    print(f"Writing static camera preamble ({(cam_start_us - bag_imu_start_us) / 1e6:.1f}s)...")
-    while t < cam_start_us:
-        header = make_header(t, "camera")
-        img_msg_template.header = header
-        camera_info.header = header
-        writer.write(
-            "/camera/image_raw", serialize_message(img_msg_template), ts_us_to_ns(t)
-        )
-        writer.write(
-            "/camera/camera_info", serialize_message(camera_info), ts_us_to_ns(t)
-        )
-        count += 1
-        t += cam_dt_us
-
-    print(f"  Static camera preamble: {count} frames at ~30Hz")
-    return count
-
-
-def write_camera_messages(
-    writer: rosbag2_py.SequentialWriter,
-    camera_csv: Path,
-    image_dir: Path,
-    metadata: dict,
-    encoding: str,
-    undistort_maps=None,
-    camera_skip: int = 0,
-) -> int:
-    print(f"Writing camera images from {image_dir.name}/...")
-    df = pd.read_csv(camera_csv)
-    width = metadata.get("camera", {}).get("image_width", 640)
-    height = metadata.get("camera", {}).get("image_height", 480)
-
-    map1, map2, new_mtx = None, None, None
-    if undistort_maps is not None:
-        map1, map2, new_mtx = undistort_maps
-
-    if new_mtx is not None:
-        camera_info = CameraInfo()
-        camera_info.width = width
-        camera_info.height = height
-        camera_info.distortion_model = "plumb_bob"
-        camera_info.d = [0.0, 0.0, 0.0, 0.0, 0.0]
-        camera_info.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
-        camera_info.k = new_mtx.flatten().tolist()
-        camera_info.p = [
-            new_mtx[0, 0], 0.0, new_mtx[0, 2], 0.0,
-            0.0, new_mtx[1, 1], new_mtx[1, 2], 0.0,
-            0.0, 0.0, 1.0, 0.0,
-        ]
-    else:
-        camera_info = make_camera_info(width, height)
-
-    count = 0
-    for idx, row in df.iterrows():
-        if camera_skip > 0 and idx % (camera_skip + 1) != 0:
-            continue
-        ts = int(row["timestamp"])
-        filename = row["filename"]
-        img_path = image_dir / filename
-
-        if not img_path.exists():
-            continue
-
-        img = cv2.imread(str(img_path))
-        if img is None:
-            continue
-
-        if map1 is not None:
-            img = cv2.remap(img, map1, map2, cv2.INTER_LINEAR)
-
-        if encoding == "mono8":
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        header = make_header(ts, "camera")
-
-        img_msg = Image()
-        img_msg.header = header
-        img_msg.height = img.shape[0]
-        img_msg.width = img.shape[1]
-        img_msg.encoding = encoding
-        img_msg.is_bigendian = False
-        if encoding == "mono8":
-            img_msg.step = img.shape[1]
-        else:
-            img_msg.step = img.shape[1] * 3
-        img_msg.data = img.tobytes()
-
-        camera_info.header = header
-
-        ts_ns = ts_us_to_ns(ts)
-        writer.write("/camera/image_raw", serialize_message(img_msg), ts_ns)
-        writer.write("/camera/camera_info", serialize_message(camera_info), ts_ns)
-        count += 1
-
-        if count % 1000 == 0:
-            print(f"  Camera: {count}/{len(df)} images...")
-
-    print(f"  Camera: {count} images")
     return count
 
 
@@ -651,7 +526,7 @@ def write_gate_ground_truth(
     for i in range(1, 5):
         prefix = f"gate{i}_int_"
         marker = Marker()
-        marker.header = make_header(ts, "world")
+        marker.header = make_header(ts, "earth")
         marker.ns = "gates"
         marker.id = i
         marker.type = Marker.CUBE
@@ -681,7 +556,22 @@ def write_gate_ground_truth(
         serialize_message(marker_array),
         ts_us_to_ns(ts),
     )
-    print(f"  Gate ground truth: 4 gates published")
+
+    tf_msg = TFMessage()
+    for marker in marker_array.markers:
+        tf = TransformStamped()
+        tf.header = make_header(ts, "earth")
+        tf.child_frame_id = f"gate_{marker.id}"
+        tf.transform.translation = Vector3(
+            x=marker.pose.position.x,
+            y=marker.pose.position.y,
+            z=marker.pose.position.z,
+        )
+        tf.transform.rotation = marker.pose.orientation
+        tf_msg.transforms.append(tf)
+    writer.write("/tf_static", serialize_message(tf_msg), ts_us_to_ns(ts))
+
+    print(f"  Gate ground truth: 4 gates published (markers + tf_static)")
     return 1
 
 
@@ -739,13 +629,13 @@ def write_gate_detections(
                 ]
             )
 
-            rel_pos = drone_rot.T @ (gate_pos - drone_pos)
+            rel_pos = drone_rot @ (gate_pos - drone_pos)
             dist = np.linalg.norm(rel_pos)
 
             if dist > detection_range:
                 continue
 
-            rel_rot = drone_rot.T @ gate_rot
+            rel_rot = drone_rot @ gate_rot.T
             q = rotmat_to_quaternion(rel_rot)
 
             det = PoseStampedWithID()
@@ -764,6 +654,32 @@ def write_gate_detections(
                 serialize_message(det_msg),
                 ts_us_to_ns(cam_ts),
             )
+
+            marker_array = MarkerArray()
+            for det in det_msg.poses:
+                marker = Marker()
+                marker.header = header
+                marker.ns = det.id
+                marker.id = int(det.id.split("_")[1])
+                marker.type = Marker.CUBE
+                marker.action = Marker.ADD
+                marker.pose = det.pose.pose
+                marker.scale = Vector3(x=0.1, y=1.4, z=1.4)
+                gate_colors = {1: (1.0, 0.0, 0.0), 2: (0.0, 1.0, 0.0),
+                               3: (0.0, 0.0, 1.0), 4: (1.0, 1.0, 0.0)}
+                r, g, b = gate_colors.get(marker.id, (1.0, 1.0, 1.0))
+                marker.color.r = r
+                marker.color.g = g
+                marker.color.b = b
+                marker.color.a = 0.6
+                marker.lifetime.nanosec = 200_000_000
+                marker_array.markers.append(marker)
+            writer.write(
+                "/detections/markers/gates",
+                serialize_message(marker_array),
+                ts_us_to_ns(cam_ts),
+            )
+
             count += 1
 
     print(f"  Gate detections: {count} messages")
@@ -801,19 +717,9 @@ def main():
         writer, paths.drone_state_csv, paths.original_bag
     )
 
-    undistort_maps = None
-    if args.undistort is not None:
-        width = metadata.get("camera", {}).get("image_width", 640)
-        height = metadata.get("camera", {}).get("image_height", 480)
-        undistort_maps = load_undistort_maps(args.undistort.resolve(), width, height)
-
     if not args.no_images:
-        counts["static_cam"] = write_static_camera_preamble(
-            writer, paths, metadata, args.image_encoding, undistort_maps
-        )
         counts["camera"] = write_camera_messages(
-            writer, paths.camera_csv, paths.image_dir, metadata, args.image_encoding,
-            undistort_maps=undistort_maps,
+            writer, paths.camera_csv, paths.image_dir, metadata,
             camera_skip=args.camera_skip,
         )
     else:

@@ -47,8 +47,10 @@ def main():
     R_e2m = Rotation.from_euler("xyz", args.e2m_rpy).as_matrix()
     t_e2m = np.array(args.e2m_xyz)
 
+    gt_quat = gt[["qx", "qy", "qz", "qw"]].values
+
     errors = {"raw_3d": [], "cor_3d": [], "raw_xy": [], "cor_xy": [],
-              "raw_z": [], "cor_z": []}
+              "raw_z": [], "cor_z": [], "raw_rot": [], "cor_rot": []}
 
     t0 = odom_ts.iloc[0]
     for i in range(len(odom)):
@@ -67,9 +69,19 @@ def main():
         errors["cor_z"].append(abs(cor[2] - gp[2]))
         errors["raw_z"].append(abs(raw_earth[2] - gp[2]))
 
+        R_gt = Rotation.from_quat(gt_quat[idx])
+        raw_q = [odom.iloc[i].raw_qx, odom.iloc[i].raw_qy, odom.iloc[i].raw_qz, odom.iloc[i].raw_qw]
+        R_raw_odom = Rotation.from_quat(raw_q)
+        R_raw_earth = Rotation.from_matrix(R_e2m.T) * R_raw_odom
+        cor_q = [odom.iloc[i].cor_qx, odom.iloc[i].cor_qy, odom.iloc[i].cor_qz, odom.iloc[i].cor_qw]
+        R_cor = Rotation.from_quat(cor_q)
+
+        errors["raw_rot"].append(np.degrees((R_gt.inv() * R_raw_earth).magnitude()))
+        errors["cor_rot"].append(np.degrees((R_gt.inv() * R_cor).magnitude()))
+
     print(f"Samples: {len(odom)} odom, {len(gt)} GT")
     print()
-    print("=== RMSE ===")
+    print("=== RMSE (Translation) ===")
     for name in ["3d", "xy", "z"]:
         e_raw = np.array(errors[f"raw_{name}"])
         e_cor = np.array(errors[f"cor_{name}"])
@@ -78,6 +90,14 @@ def main():
         pct = (1 - rmse_cor / rmse_raw) * 100
         print(f"{name.upper():3s}  Raw={rmse_raw:.3f}m  Corrected={rmse_cor:.3f}m"
               f"  Improvement={pct:+.1f}%")
+
+    e_raw_rot = np.array(errors["raw_rot"])
+    e_cor_rot = np.array(errors["cor_rot"])
+    rmse_raw_rot = np.sqrt(np.mean(e_raw_rot ** 2))
+    rmse_cor_rot = np.sqrt(np.mean(e_cor_rot ** 2))
+    pct_rot = (1 - rmse_cor_rot / rmse_raw_rot) * 100
+    print(f"ROT  Raw={rmse_raw_rot:.2f}deg  Corrected={rmse_cor_rot:.2f}deg"
+          f"  Improvement={pct_rot:+.1f}%")
 
     print()
     n = len(errors["cor_3d"])
