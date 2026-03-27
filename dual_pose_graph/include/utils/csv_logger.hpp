@@ -26,7 +26,7 @@ public:
     if (keyframe_file_) {
       fprintf(keyframe_file_,
         "sec,nsec,raw_x,raw_y,raw_z,raw_qx,raw_qy,raw_qz,raw_qw,"
-        "main_nodes,main_edges,chi2_before,chi2_after,iterations,"
+        "main_nodes,main_edges,chi2_before,chi2_after,opt_time_ms,"
         "tf_x,tf_y,tf_z,tf_qx,tf_qy,tf_qz,tf_qw,"
         "opt_x,opt_y,opt_z,cor_x,cor_y,cor_z\n");
     }
@@ -86,7 +86,7 @@ public:
     int64_t sec, uint32_t nsec,
     const Eigen::Isometry3d & raw,
     int main_nodes, int main_edges,
-    double chi2_before, double chi2_after, int iterations,
+    double chi2_before, double chi2_after, double opt_time_ms,
     const Eigen::Isometry3d & map_odom_tf,
     const Eigen::Isometry3d & optimized,
     const Eigen::Isometry3d & corrected)
@@ -102,12 +102,12 @@ public:
 
     fprintf(keyframe_file_,
       "%ld,%u,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,"
-      "%d,%d,%.4f,%.4f,%d,"
+      "%d,%d,%.4f,%.4f,%.2f,"
       "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,"
       "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
       sec, nsec,
       rt.x(), rt.y(), rt.z(), rq.x(), rq.y(), rq.z(), rq.w(),
-      main_nodes, main_edges, chi2_before, chi2_after, iterations,
+      main_nodes, main_edges, chi2_before, chi2_after, opt_time_ms,
       tt.x(), tt.y(), tt.z(), tq.x(), tq.y(), tq.z(), tq.w(),
       ot.x(), ot.y(), ot.z(), ct.x(), ct.y(), ct.z());
   }

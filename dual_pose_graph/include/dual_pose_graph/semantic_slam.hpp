@@ -154,6 +154,7 @@ private:
   bool detection_covariance_by_distance2_ = false;
   bool odometry_is_relative_ = false;
   bool generate_odom_map_transform_ = false;
+  bool use_dual_graph_ = true;
   bool visualize_graphs_ = false;
   bool generate_orientation_cov_by_distance_ = false;
 

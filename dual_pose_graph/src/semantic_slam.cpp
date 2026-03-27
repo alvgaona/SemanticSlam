@@ -333,11 +333,15 @@ void SemanticSlam::detectionsCallback(
 
   // DEBUG_START_TIMER
   OdometryInfo detection_odometry_info;
-  if (!optimizer_ptr_->checkAddingNewDetection(detection_odometry, detection_odometry_info)) {
-    return;
+  if (use_dual_graph_) {
+    if (!optimizer_ptr_->checkAddingNewDetection(detection_odometry, detection_odometry_info)) {
+      return;
+    }
+  } else {
+    if (!optimizer_ptr_->generateDetectionOdometryInfo(detection_odometry, detection_odometry_info)) {
+      return;
+    }
   }
-
-  // DEBUG(detection_odometry_info.covariance_matrix);
 
   std::string object_type;
   if (force_object_type_.empty()) {
@@ -359,14 +363,23 @@ void SemanticSlam::detectionsCallback(
       processGateMsg(detection, detection_odometry_info);
     }
   }
-  // DEBUG_LOG_DURATION
+
+  if (use_dual_graph_ && visualize_graphs_) {
+    visualizeTempGraph();
+  }
 }
 
 void SemanticSlam::arucoPoseCallback(const as2_msgs::msg::PoseStampedWithID::SharedPtr msg)
 {
   OdometryInfo detection_odometry_info;
-  if (!optimizer_ptr_->checkAddingNewDetection(last_odometry_received_, detection_odometry_info)) {
-    return;
+  if (use_dual_graph_) {
+    if (!optimizer_ptr_->checkAddingNewDetection(last_odometry_received_, detection_odometry_info)) {
+      return;
+    }
+  } else {
+    if (!optimizer_ptr_->generateDetectionOdometryInfo(last_odometry_received_, detection_odometry_info)) {
+      return;
+    }
   }
   processArucoMsg(*msg, detection_odometry_info);
 }
@@ -374,8 +387,14 @@ void SemanticSlam::arucoPoseCallback(const as2_msgs::msg::PoseStampedWithID::Sha
 void SemanticSlam::gatePoseCallback(const as2_msgs::msg::PoseStampedWithID::SharedPtr msg)
 {
   OdometryInfo detection_odometry_info;
-  if (!optimizer_ptr_->checkAddingNewDetection(last_odometry_received_, detection_odometry_info)) {
-    return;
+  if (use_dual_graph_) {
+    if (!optimizer_ptr_->checkAddingNewDetection(last_odometry_received_, detection_odometry_info)) {
+      return;
+    }
+  } else {
+    if (!optimizer_ptr_->generateDetectionOdometryInfo(last_odometry_received_, detection_odometry_info)) {
+      return;
+    }
   }
   processGateMsg(*msg, detection_odometry_info);
 }
@@ -629,6 +648,12 @@ OptimizerG2OParameters SemanticSlam::getOptimizerParameters() {
   } else {
     optimizer_params.throttle_detections = true;
   }
+  if (this->has_parameter("use_dual_graph")) {
+    optimizer_params.use_dual_graph = this->get_parameter("use_dual_graph").as_bool();
+  } else {
+    optimizer_params.use_dual_graph = true;
+  }
+  use_dual_graph_ = optimizer_params.use_dual_graph;
 
   double earth_to_map_x = 0.0;
   double earth_to_map_y = 0.0;
