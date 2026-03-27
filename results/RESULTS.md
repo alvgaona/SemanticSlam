@@ -33,7 +33,7 @@ Per-flight `earth_to_map` calibration (SVD, skip=1000):
 
 | Flight | x      | y      | z      | roll   | pitch  | yaw     |
 |--------|------- |--------|--------|--------|--------|---------|
-| 01p    | -0.783 | -1.599 | -0.114 | 0.041  | -0.043 | -3.129  |
+| 01p    | -0.806 | -1.683 | -0.010 | 0.048  | -0.035 | -3.140  |
 | 02p    | -0.478 | -1.650 | 0.028  | 0.007  | -0.016 | 3.114   |
 | 03p    | -0.793 | -1.122 | -0.513 | 0.021  | -0.060 | -3.102  |
 | 04p    | -1.236 | -0.692 | -0.379 | 0.044  | -0.067 | -2.967  |
@@ -69,35 +69,21 @@ Detections routed to temp graph (gates as free nodes), optimized, then merged to
 measurements with covariance from graph marginals. Key fix: `setFixedObjects` removed from temp graph so
 gate positions are freely estimated from observations rather than fixed.
 
-### evaluate_slam.py (per-flight earth_to_map calibration)
+### evaluate_slam.py (per-flight earth_to_map calibration, fixed detections)
 
-| Flight | Metric | VIO RMSE (m) | Corrected RMSE (m) | Improvement |
-|--------|--------|-------------|--------------------|-----------:|
-| 01p    | 3D     | 1.635       | 1.268              |     +22.4% |
-| 01p    | XY     | 1.332       | 1.055              |     +20.8% |
-| 01p    | Z      | 0.947       | 0.703              |     +25.7% |
-| 02p    | 3D     | 0.739       | 0.665              |     +10.0% |
-| 02p    | XY     | 0.647       | 0.589              |      +9.1% |
-| 02p    | Z      | 0.356       | 0.309              |     +13.1% |
-| 03p    | 3D     | 1.009       | 0.780              |     +22.7% |
-| 03p    | XY     | 0.885       | 0.674              |     +23.9% |
-| 03p    | Z      | 0.485       | 0.393              |     +19.0% |
-| 04p    | 3D     | 1.791       | 1.313              |     +26.7% |
-| 04p    | XY     | 1.699       | 1.291              |     +24.0% |
-| 04p    | Z      | 0.567       | 0.241              |     +57.5% |
-| 05p    | 3D     | 1.065       | 0.817              |     +23.3% |
-| 05p    | XY     | 0.913       | 0.717              |     +21.4% |
-| 05p    | Z      | 0.548       | 0.391              |     +28.7% |
+Previous results (01p-05p) used buggy detection computation (rotation matrix was transposed,
+introducing ~0.55m position error per detection). Results below are with the corrected detections.
 
-### Summary (evaluate_slam.py, 3D RMSE)
-
-| Flight | VIO (m) | Corrected (m) | Single-graph | Dual-graph |
-|--------|---------|---------------|--------------|------------|
-| 01p    | 1.635   | 1.268         |       +21.4% |     +22.4% |
-| 02p    | 0.739   | 0.665         |       +13.1% |     +10.0% |
-| 03p    | 1.009   | 0.780         |       +22.0% |     +22.7% |
-| 04p    | 1.791   | 1.313         |          n/a |     +26.7% |
-| 05p    | 1.065   | 0.817         |          n/a |     +23.3% |
+| Flight | Metric | VIO RMSE | Corrected RMSE | Improvement |
+|--------|--------|----------|----------------|------------|
+| 01p    | 3D     | 1.627m   | 0.657m         |     +59.6% |
+| 01p    | XY     | 1.172m   | 0.557m         |     +52.5% |
+| 01p    | Z      | 1.128m   | 0.350m         |     +69.0% |
+| 01p    | ROT    | 8.77deg  | 4.77deg        |     +45.5% |
+| 07p    | 3D     | 2.179m   | 0.503m         |     +76.9% |
+| 07p    | XY     | 2.066m   | 0.485m         |     +76.5% |
+| 07p    | Z      | 0.690m   | 0.134m         |     +80.6% |
+| 07p    | ROT    | 5.79deg  | 5.03deg        |     +13.1% |
 
 ## Notes
 
