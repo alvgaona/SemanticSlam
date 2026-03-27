@@ -13,7 +13,7 @@
     main_graph_odometry_distance_threshold: 2.0
     main_graph_odometry_distance_threshold_if_detections: 2.0
     main_graph_odometry_orientation_threshold: 1.0
-    temp_graph_odometry_distance_threshold: 0.1
+    temp_graph_odometry_distance_threshold: 0.5
     temp_graph_odometry_orientation_threshold: 0.1
     odometry_is_relative: false
     generate_odom_map_transform: true
@@ -34,8 +34,8 @@
     detection_orientation_covariance_large_factor: 100.0
     detection_covariance_by_distance: false
     detection_covariance_by_distance2: false
-    detection_covariance_factor: 0.01
-    detection_orientation_covariance_factor: 0.1
+    detection_covariance_factor: 0.1
+    detection_orientation_covariance_factor: 1.0
     throttle_detections: true
     use_dual_graph: true
     force_object_type: "aruco"
