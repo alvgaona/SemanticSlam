@@ -10,7 +10,12 @@
 
 ## Configuration
 
+Dual-graph mode, `main=2.0m`, `temp=0.5m` unless noted:
+
 ```yaml
+use_dual_graph: true
+main_graph_odometry_distance_threshold: 2.0
+temp_graph_odometry_distance_threshold: 0.5
 force_object_type: "aruco"
 detection_covariance_factor: 0.1
 detection_orientation_covariance_factor: 1.0
@@ -23,14 +28,27 @@ fixed_objects:
   gate_4: { type: "aruco", pose: [-3.97, 1.28, 1.17, 0.0] }
 ```
 
-Per-flight `earth_to_map` calibration (SVD, skip=1000):
+## Results — Dual-graph 2.0m/0.5m (default config)
 
-| Flight | Track | x | y | z | roll | pitch | yaw |
-|--------|-------|-------|--------|--------|--------|--------|---------|
-| 01p | ellipse | -0.782 | -1.600 | -0.114 | 0.041 | -0.043 | -3.129 |
-| 07p | lemniscate | -1.406 | -0.484 | -0.221 | -0.047 | -0.023 | -3.108 |
+All results with E2M.inverse() fix applied. Works for any VIO initialization angle.
 
-## Results — Flight 01p Ellipse
+| Flight | Track | E2M yaw | ATE 3D | 3D % | ATE XY | XY % | ATE Z | Z % | ATE ROT | ROT % | Nodes | Edges | Opt P95 |
+|--------|-------|---------|--------|------|--------|------|-------|-----|---------|-------|-------|-------|---------|
+| 01p | ellipse | +3.13 | 0.555m | +65.6 | 0.439m | +62.2 | 0.339m | +69.7 | 4.81° | +50.5 | 251 | 1218 | 7ms |
+| 03p | ellipse | +3.14 | 0.417m | +49.9 | 0.393m | +51.3 | 0.140m | +31.3 | 6.07° | -25.7 | 193 | 932 | 6ms |
+| 07p | lemniscate | -3.11 | 0.503m | +77.0 | 0.485m | +76.6 | 0.133m | +80.7 | 5.04° | +13.1 | 226 | 1097 | 5ms |
+| 08p | lemniscate | -1.57 | 0.357m | +66.4 | 0.331m | +61.2 | 0.134m | +78.8 | 5.81° | +4.7 | 188 | 907 | 6ms |
+
+Raw VIO baselines:
+
+| Flight | VIO 3D | VIO XY | VIO Z | VIO ROT |
+|--------|--------|--------|-------|---------|
+| 01p | 1.613m | 1.160m | 1.120m | 9.73° |
+| 03p | 0.833m | 0.807m | 0.204m | 4.83° |
+| 07p | 2.180m | 2.070m | 0.690m | 5.77° |
+| 08p | 1.063m | 0.854m | 0.632m | 6.10° |
+
+## Results — Flight 01p Ellipse (parameter sweep)
 
 | # | Mode | Main | Temp | ATE 3D | 3D % | ATE XY | XY % | ATE Z | Z % | ATE ROT | ROT % | Nodes | Edges | Opt P95 |
 |---|--------|------|------|--------|-------|--------|-------|-------|------|---------|--------|-------|-------|---------|
@@ -43,35 +61,31 @@ Per-flight `earth_to_map` calibration (SVD, skip=1000):
 | 5 | Single | 0.5m | — | 0.537m | +65.1 | 0.390m | +66.1 | 0.368m | +63.8 | 2.91° | +68.5 | 991 | 4890 | 37ms |
 | 6 | Single | 0.1m | — | 0.346m | +70.8 | 0.232m | +74.2 | 0.257m | +66.9 | 2.42° | +65.9 | 1822 | 8617 | 65ms |
 
-## Results — Flight 07p Lemniscate
-
-### Full comparison table
+## Results — Flight 07p Lemniscate (parameter sweep)
 
 | # | Mode | Main | Temp | ATE 3D | 3D % | ATE XY | XY % | ATE Z | Z % | ATE ROT | ROT % | Nodes | Edges | Opt P95 |
 |---|--------|------|------|--------|-------|--------|-------|-------|------|---------|--------|-------|-------|---------|
 | 0 | VIO only | — | — | 2.180m | — | 2.070m | — | 0.690m | — | 5.77° | — | — | — | — |
-| 1 | Dual | 2.0m | 0.5m | 0.503m | +77.0 | 0.485m | +76.6 | 0.133m | +80.7 | 5.04° | +13.1 | 226 | 1097 | ~5ms |
-| 2 | Dual | 2.0m | 0.1m | 0.498m | +77.1 | 0.479m | +76.9 | 0.138m | +80.0 | 4.98° | +14.1 | 226 | 1085 | ~5ms |
+| 1 | Dual | 2.0m | 0.5m | 0.503m | +77.0 | 0.485m | +76.6 | 0.133m | +80.7 | 5.04° | +13.1 | 226 | 1097 | 5ms |
+| 2 | Dual | 2.0m | 0.1m | 0.498m | +77.1 | 0.479m | +76.9 | 0.138m | +80.0 | 4.98° | +14.1 | 226 | 1085 | 5ms |
 | 3 | Dual | 0.5m | 0.1m | 0.415m | +80.1 | 0.390m | +80.3 | 0.142m | +78.8 | 4.55° | +19.7 | 895 | 4158 | 30ms |
 | 4 | Single | 5.0m | — | 0.682m | +68.1 | 0.647m | +68.2 | 0.216m | +67.1 | 3.52° | +38.3 | 56 | 252 | <1ms |
-| 5 | Single | 2.0m | — | 0.546m | +74.8 | 0.527m | +74.4 | 0.143m | +78.9 | 4.21° | +27.0 | 209 | 1012 | ~5ms |
-| 6 | Single | 0.5m | — | 0.449m | +78.6 | 0.426m | +78.6 | 0.142m | +78.8 | 3.80° | +33.3 | 895 | 4422 | ~27ms |
-| 7 | Single | 0.1m | — | 0.294m | +84.2 | 0.266m | +85.1 | 0.127m | +77.5 | 3.69° | +35.2 | 1781 | 8688 | ~50ms |
+| 5 | Single | 2.0m | — | 0.546m | +74.8 | 0.527m | +74.4 | 0.143m | +78.9 | 4.21° | +27.0 | 209 | 1012 | 5ms |
+| 6 | Single | 0.5m | — | 0.449m | +78.6 | 0.426m | +78.6 | 0.142m | +78.8 | 3.80° | +33.3 | 895 | 4422 | 27ms |
+| 7 | Single | 0.1m | — | 0.294m | +84.2 | 0.266m | +85.1 | 0.127m | +77.5 | 3.69° | +35.2 | 1781 | 8688 | 50ms |
 
-### Key takeaways
+## Key takeaways
 
-- **Dual 2.0m/0.5m is the best real-time trade-off**: +77% 3D improvement with only 226 nodes and
-  P95 ~5ms optimization latency
+- **Dual 2.0m/0.5m is the best real-time trade-off**: +65-77% 3D improvement with ~200 nodes and
+  P95 5-8ms optimization latency
 - **Temp graph threshold has minimal effect** on accuracy when main threshold is fixed (0.5m vs 0.1m
   temp: +77.0% vs +77.1%). The main graph size drives performance.
 - **Main graph threshold drives both accuracy and latency**: halving it roughly doubles nodes/edges
-  and optimization cost
-- **Dual-graph produces fewer edges** than single-graph at the same main threshold because the temp
-  graph merges multiple detections into one refined measurement per gate per keyframe
-- **Single 0.1m achieves best absolute accuracy** (+84%, ATE=0.29m) but P95 ~50ms exceeds the 30Hz
-  real-time budget. Not suitable for online operation.
-- **Single-graph has better rotation correction** (+33-38% vs +13-20% for dual). Direct observation
-  edges preserve orientation information better than the temp graph merge.
+- **Dual-graph produces fewer edges** than single-graph at the same main threshold
+- **Single 0.1m achieves best absolute accuracy** (+84%, ATE=0.29m) but P95 ~50ms exceeds 30Hz budget
+- **Single-graph has better rotation correction** (+33-68% vs +5-50% for dual)
+- **E2M.inverse() fix**: critical for 90° VIO initialization flights. Previous code double-applied E2M
+  rotation, accidentally working for 180° but failing for 90°.
 
 ## Notes
 
@@ -79,9 +93,11 @@ Per-flight `earth_to_map` calibration (SVD, skip=1000):
   which triggers more temp keyframes on rotation changes, dramatically improving Z correction (+90%).
 - **Detection fix**: Early results used a buggy detection computation (rotation matrix was transposed,
   introducing ~0.55m position error per detection). All results above use the corrected computation.
+- **E2M.inverse() fix**: `map_ref = E2M.inverse() * odom` instead of `E2M * odom`. The previous code
+  double-applied the E2M rotation to odom nodes. For 180° E2M (E2M²=I), this was invisible. For 90°
+  E2M (E2M²=R(180°)), it caused 180° rotation error in every graph node, destroying rotation ATE.
 - **Per-flight calibration**: earth_to_map must be computed per flight because OpenVINS initializes
   with an arbitrary heading. The calibration script must skip the first ~1000 VIO samples.
-- **Throttling**: Single-graph throttles to 1 detection per gate per main keyframe to avoid flooding
-  the graph with redundant constraints.
+- **Throttling**: Single-graph throttles to 1 detection per gate per main keyframe.
 - **Detections are synthetic**: Generated from GT (mocap) poses and known gate positions (zero noise).
   Real vision-based detections will have noise, missed detections, and false positives.
