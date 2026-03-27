@@ -103,6 +103,12 @@ def parse_args():
         default=0.0,
         help="Prepend N seconds of static data (repeat first frame/IMU) before real data",
     )
+    parser.add_argument(
+        "--camera-skip",
+        type=int,
+        default=0,
+        help="Skip N frames between each written frame (e.g., 3 to keep 1 of 4 → ~30Hz from 120Hz)",
+    )
     return parser.parse_args()
 
 
@@ -545,6 +551,7 @@ def write_camera_messages(
     metadata: dict,
     encoding: str,
     undistort_maps=None,
+    camera_skip: int = 0,
 ) -> int:
     print(f"Writing camera images from {image_dir.name}/...")
     df = pd.read_csv(camera_csv)
@@ -572,7 +579,9 @@ def write_camera_messages(
         camera_info = make_camera_info(width, height)
 
     count = 0
-    for _, row in df.iterrows():
+    for idx, row in df.iterrows():
+        if camera_skip > 0 and idx % (camera_skip + 1) != 0:
+            continue
         ts = int(row["timestamp"])
         filename = row["filename"]
         img_path = image_dir / filename
@@ -805,6 +814,7 @@ def main():
         counts["camera"] = write_camera_messages(
             writer, paths.camera_csv, paths.image_dir, metadata, args.image_encoding,
             undistort_maps=undistort_maps,
+            camera_skip=args.camera_skip,
         )
     else:
         print("Skipping camera images (--no-images)")
