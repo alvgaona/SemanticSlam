@@ -12,17 +12,9 @@ log/
 # macOS
 .DS_Store
 
-# Dataset (large files, downloaded separately)
-dataset/piloted/*/camera_flight-*
-dataset/piloted/*/camera_flight-*.zip
-dataset/piloted/*/csv_raw/
-dataset/piloted/*/label_flight-*
-dataset/piloted/*/label_flight-*.zip
-dataset/piloted/*/ros2bag_flight-*
-dataset/piloted/*/rosbag_vio/
-dataset/piloted/*/rosbag_vio_undistorted/
-dataset/piloted/*/*.csv
-dataset/piloted_zipchunk*
+# Datasets
+dataset/*
+!dataset/camera_calibration
 
 # IDE
 .vscode/
