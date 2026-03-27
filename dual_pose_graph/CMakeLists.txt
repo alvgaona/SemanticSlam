@@ -20,6 +20,9 @@ endif()
 set(CMAKE_BUILD_TYPE Release)
 
 
+# Pre-find GeographicLib using CONFIG mode to avoid system FindModule issues
+find_package(GeographicLib CONFIG QUIET)
+
 # find dependencies
 set(PROJECT_DEPENDENCIES
   ament_cmake
