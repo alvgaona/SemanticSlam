@@ -37,7 +37,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    odom = pd.read_csv(args.log_dir / "slam_odom.csv")
+    odom = pd.read_csv(args.log_dir / "slam_odom.csv").apply(pd.to_numeric, errors="coerce").dropna()
     gt = pd.read_csv(args.log_dir / "slam_ground_truth.csv")
 
     gt_ts = gt["sec"] + gt["nsec"] * 1e-9

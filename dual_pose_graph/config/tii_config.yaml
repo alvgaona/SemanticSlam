@@ -10,7 +10,7 @@
     robot_frame: "base_link"
     viz_main_markers_topic: "slam_viz/markers/main"
     viz_temp_markers_topic: "slam_viz/markers/temp"
-    main_graph_odometry_distance_threshold: 5.0
+    main_graph_odometry_distance_threshold: 2.0
     main_graph_odometry_distance_threshold_if_detections: 2.0
     main_graph_odometry_orientation_threshold: 1.0
     temp_graph_odometry_distance_threshold: 0.5
@@ -37,6 +37,7 @@
     detection_covariance_factor: 0.1
     detection_orientation_covariance_factor: 1.0
     throttle_detections: true
+    use_dual_graph: true
     force_object_type: "aruco"
     fixed_objects:
       gate_1:

@@ -68,6 +68,7 @@ struct OptimizerG2OParameters
   bool generate_odom_map_transform;
   bool calculate_odom_covariance_;
   bool throttle_detections;
+  bool use_dual_graph;
   Eigen::Isometry3d earth_to_map_transform;
   std::vector<FixedObject> fixed_objects;
 };
@@ -105,6 +106,9 @@ public:
     OdometryInfo & _detection_odometry_info);
   bool checkAddingConditions(
     const OdometryInfo & _odometry, const double distance_threshold);
+  bool generateDetectionOdometryInfo(
+    const OdometryWithCovariance & _detection_odometry,
+    OdometryInfo & _detection_odometry_info);
 
 private:
   bool first_odom_ = true;
@@ -132,6 +136,7 @@ private:
   bool generate_odom_map_transform_ = false;
   bool calculate_odom_covariance_ = false;
   bool throttle_detections_ = true;
+  bool use_dual_graph_ = true;
   std::vector<FixedObject> fixed_objects_;
   std::unordered_set<std::string> detections_since_last_keyframe_;
   CsvLogger * csv_logger_ = nullptr;

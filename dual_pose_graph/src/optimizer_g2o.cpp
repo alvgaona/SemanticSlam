@@ -51,6 +51,7 @@
 #include "utils/general_utils.hpp"
 #include "utils/debug_utils.hpp"
 #include "utils/csv_logger.hpp"
+#include <chrono>
 #include <fstream>
 
 OptimizerG2O::OptimizerG2O()
@@ -134,12 +135,11 @@ bool OptimizerG2O::handleNewOdom(
   {
     return false;
   }
-  if (temp_graph_generated_) {
+  if (use_dual_graph_ && temp_graph_generated_) {
     if (!checkAddingConditions(new_odometry_info, main_graph_odometry_distance_threshold_if_detections_)) {
       return false;
     }
-  } 
-  else if (!checkAddingConditions(new_odometry_info, main_graph_odometry_distance_threshold_)) {
+  } else if (!checkAddingConditions(new_odometry_info, main_graph_odometry_distance_threshold_)) {
     return false;
   }
 
@@ -161,6 +161,12 @@ bool OptimizerG2O::handleNewOdom(
     new_odometry_info.map_ref, new_odometry_info.increment,
     new_odometry_info.covariance_matrix);
 
+  if (!use_dual_graph_) {
+    std::lock_guard<std::mutex> lock(graph_mutex_);
+    detections_since_last_keyframe_.clear();
+  }
+
+  if (use_dual_graph_) {
   graph_mutex_.lock();
   if (temp_graph == nullptr) {
     ERROR("Temp graph is null");
@@ -270,12 +276,23 @@ bool OptimizerG2O::handleNewOdom(
     temp_graph_generated_ = false;
   }
   graph_mutex_.unlock();
+  } // use_dual_graph_
 
-  // TODO(dps): Choose when to optimize: either every time a new keyframe is added, or every certain
-  // period of time
+  double chi2_before = main_graph->graph_->chi2();
+  auto opt_start = std::chrono::steady_clock::now();
   main_graph->optimizeGraph();
+  auto opt_end = std::chrono::steady_clock::now();
+  double chi2_after = main_graph->graph_->chi2();
+  double opt_ms = std::chrono::duration<double, std::milli>(opt_end - opt_start).count();
+
   if (generate_odom_map_transform_) {
     updateOdomMapTransform();
+  }
+
+  int temp_nodes = 0, temp_edges = 0;
+  if (use_dual_graph_ && temp_graph) {
+    temp_nodes = static_cast<int>(temp_graph->graph_->vertices().size());
+    temp_edges = static_cast<int>(temp_graph->graph_->edges().size());
   }
 
   if (csv_logger_) {
@@ -285,7 +302,7 @@ bool OptimizerG2O::handleNewOdom(
       last_odometry_added_.odometry,
       static_cast<int>(main_graph->graph_->vertices().size()),
       static_cast<int>(main_graph->graph_->edges().size()),
-      0.0, 0.0, 0,
+      chi2_before, chi2_after, opt_ms,
       map_odom_tranform_, optimized, corrected);
   }
 
@@ -360,8 +377,16 @@ void OptimizerG2O::handleNewObjectDetection(
     return;
   }
 
-  std::lock_guard<std::mutex> lock(graph_mutex_);
-  temp_graph->addNewObjectDetection(_object);
+  if (use_dual_graph_) {
+    std::lock_guard<std::mutex> lock(graph_mutex_);
+    temp_graph->addNewObjectDetection(_object);
+  } else {
+    std::lock_guard<std::mutex> lock(graph_mutex_);
+    std::string id = _object->getId();
+    if (detections_since_last_keyframe_.count(id) > 0) { return; }
+    detections_since_last_keyframe_.insert(id);
+    main_graph->addNewObjectDetection(_object);
+  }
 }
 
 void OptimizerG2O::setParameters(const OptimizerG2OParameters & _params)
@@ -380,12 +405,14 @@ void OptimizerG2O::setParameters(const OptimizerG2OParameters & _params)
   earth_map_transform_ = initial_earth_to_map_transform_;
   calculate_odom_covariance_ = _params.calculate_odom_covariance_;
   throttle_detections_ = _params.throttle_detections;
+  use_dual_graph_ = _params.use_dual_graph;
 
   PARAM(PRINT_VAR(main_graph_odometry_distance_threshold_));
   PARAM(PRINT_VAR(temp_graph_odometry_distance_threshold_));
   PARAM(PRINT_VAR(main_graph_odometry_distance_threshold_if_detections_));
   PARAM(PRINT_VAR(map_odom_transform_alpha_));
   PARAM(PRINT_VAR(calculate_odom_covariance_));
+  PARAM(PRINT_VAR(use_dual_graph_));
 
   Eigen::MatrixXd earth_to_map_covariance_ = Eigen::MatrixXd::Identity(6, 6) * 0.0001;
   earth_to_map_covariance_(5, 5) = 0.1;
@@ -457,4 +484,11 @@ Eigen::Isometry3d OptimizerG2O::getMapOdomTransform()
 Eigen::Isometry3d OptimizerG2O::getMapTransform()
 {
   return earth_map_transform_;
+}
+
+bool OptimizerG2O::generateDetectionOdometryInfo(
+  const OdometryWithCovariance & _detection_odometry,
+  OdometryInfo & _detection_odometry_info)
+{
+  return generateOdometryInfo(_detection_odometry, last_odometry_added_, _detection_odometry_info);
 }

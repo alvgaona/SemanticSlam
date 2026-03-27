@@ -85,6 +85,21 @@ introducing ~0.55m position error per detection). Results below are with the cor
 | 07p    | Z      | 0.690m   | 0.134m         |     +80.6% |
 | 07p    | ROT    | 5.79deg  | 5.03deg        |     +13.1% |
 
+## Single-Graph vs Dual-Graph Comparison (corrected detections)
+
+Flight 07p lemniscate:
+
+| Mode | Threshold | 3D | XY | Z | ROT | Opt (mean) |
+|------|-----------|------|------|------|------|------------|
+| Dual-graph | 2.0m | 0.481m (+77.5%) | 0.468m (+77.0%) | 0.111m (+83.3%) | 5.04deg (+11.9%) | — |
+| Single-graph | 5.0m | 0.682m (+68.1%) | 0.647m (+68.2%) | 0.216m (+67.1%) | 3.52deg (+38.3%) | — |
+| Single-graph | 2.0m | 0.546m (+74.8%) | 0.527m (+74.4%) | 0.143m (+78.9%) | 4.21deg (+27.0%) | 2.7ms |
+| Single-graph | 0.5m | 0.449m (+78.6%) | 0.426m (+78.6%) | 0.142m (+78.8%) | 3.80deg (+33.3%) | 13.5ms |
+
+Single-graph at 0.5m matches dual-graph accuracy but with 4x more nodes/edges (895 nodes, 4422 edges,
+~3527 gate edges). Optimization grows to ~25ms at end of flight. The 2.0m threshold offers the best
+trade-off: near-dual-graph accuracy at 5x lower optimization cost.
+
 ## Notes
 
 - **Per-flight calibration**: earth_to_map must be computed per flight because OpenVINS initializes with
