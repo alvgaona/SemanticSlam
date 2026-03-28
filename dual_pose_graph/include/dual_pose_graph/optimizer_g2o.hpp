@@ -105,7 +105,8 @@ public:
     const OdometryWithCovariance & _detection_odometry,
     OdometryInfo & _detection_odometry_info);
   bool checkAddingConditions(
-    const OdometryInfo & _odometry, const double distance_threshold);
+    const OdometryInfo & _odometry, const double distance_threshold,
+    const double orientation_threshold = 999.0);
   bool generateDetectionOdometryInfo(
     const OdometryWithCovariance & _detection_odometry,
     OdometryInfo & _detection_odometry_info);

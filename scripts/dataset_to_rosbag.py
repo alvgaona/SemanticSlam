@@ -88,6 +88,12 @@ def parse_args():
         help="Prepend N seconds of static data (repeat first frame/IMU) before real data",
     )
     parser.add_argument(
+        "--fov",
+        type=float,
+        default=None,
+        help="Camera FOV in degrees for detection filtering (default: None = omnidirectional)",
+    )
+    parser.add_argument(
         "--no-images",
         action="store_true",
         help="Skip camera images",
@@ -580,8 +586,11 @@ def write_gate_detections(
     camera_csv: Path,
     mocap_csv: Path,
     detection_range: float,
+    fov: float = None,
 ) -> int:
-    print(f"Synthesizing gate detections (range < {detection_range}m)...")
+    fov_half_angle = np.radians(fov / 2.0) if fov is not None else None
+    fov_str = f", FOV < {fov}°" if fov else ", omnidirectional"
+    print(f"Synthesizing gate detections (range < {detection_range}m{fov_str})...")
     cam_df = pd.read_csv(camera_csv)
     mocap_df = pd.read_csv(mocap_csv)
     mocap_timestamps = mocap_df["timestamp"].values
@@ -634,6 +643,13 @@ def write_gate_detections(
 
             if dist > detection_range:
                 continue
+
+            if fov_half_angle is not None:
+                angle_from_forward = np.arctan2(
+                    np.sqrt(rel_pos[1]**2 + rel_pos[2]**2), rel_pos[0]
+                )
+                if angle_from_forward > fov_half_angle:
+                    continue
 
             rel_rot = drone_rot @ gate_rot.T
             q = rotmat_to_quaternion(rel_rot)
@@ -728,7 +744,7 @@ def main():
 
     counts["gate_gt"] = write_gate_ground_truth(writer, paths.mocap_csv)
     counts["gate_detections"] = write_gate_detections(
-        writer, paths.camera_csv, paths.mocap_csv, args.detection_range
+        writer, paths.camera_csv, paths.mocap_csv, args.detection_range, fov=args.fov
     )
 
     del writer
