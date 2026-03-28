@@ -10,20 +10,20 @@
     robot_frame: "base_link"
     viz_main_markers_topic: "slam_viz/markers/main"
     viz_temp_markers_topic: "slam_viz/markers/temp"
-    main_graph_odometry_distance_threshold: 2.0
-    main_graph_odometry_distance_threshold_if_detections: 2.0
-    main_graph_odometry_orientation_threshold: 1.0
+    main_graph_odometry_distance_threshold: 0.1
+    main_graph_odometry_distance_threshold_if_detections: 0.1
+    main_graph_odometry_orientation_threshold: 5.0
     temp_graph_odometry_distance_threshold: 0.1
     temp_graph_odometry_orientation_threshold: 0.1
     odometry_is_relative: false
     generate_odom_map_transform: true
     earth_to_map:
-      x: 1.485952
-      y: -0.331355
-      z: 0.004381
-      roll: 0.003878
-      pitch: -0.011700
-      yaw: -1.597162
+      x: 0.407898
+      y: -0.310663
+      z: -0.270736
+      roll: -0.000071
+      pitch: -0.033311
+      yaw: -1.527472
     visualize_graphs: true
     map_odom_security_threshold: 5.0
     calculate_odom_covariance: true
@@ -35,7 +35,7 @@
     detection_covariance_by_distance: false
     detection_covariance_by_distance2: false
     detection_covariance_factor: 0.1
-    detection_orientation_covariance_factor: 0.1
+    detection_orientation_covariance_factor: 1.0
     throttle_detections: true
     use_dual_graph: false
     force_object_type: "aruco"
