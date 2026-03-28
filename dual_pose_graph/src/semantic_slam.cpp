@@ -700,8 +700,6 @@ OptimizerG2OParameters SemanticSlam::getOptimizerParameters() {
   auto result = this->list_parameters({"fixed_objects"}, 3);
   parseFixedObjects(result, fixed_objects, optimizer_params);
 
-  WARN("main_graph_odometry_orientation_threshold not implemented yet");
-  WARN("temp_graph_odometry_orientation_threshold not implemented yet");
   WARN("odometry_is_relative not implemented yet");
   WARN("map_odom_security_threshold not implemented yet");
 

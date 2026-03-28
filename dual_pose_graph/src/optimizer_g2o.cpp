@@ -136,10 +136,12 @@ bool OptimizerG2O::handleNewOdom(
     return false;
   }
   if (use_dual_graph_ && temp_graph_generated_) {
-    if (!checkAddingConditions(new_odometry_info, main_graph_odometry_distance_threshold_if_detections_)) {
+    if (!checkAddingConditions(new_odometry_info, main_graph_odometry_distance_threshold_if_detections_,
+          main_graph_odometry_orientation_threshold_)) {
       return false;
     }
-  } else if (!checkAddingConditions(new_odometry_info, main_graph_odometry_distance_threshold_)) {
+  } else if (!checkAddingConditions(new_odometry_info, main_graph_odometry_distance_threshold_,
+               main_graph_odometry_orientation_threshold_)) {
     return false;
   }
 
@@ -310,12 +312,14 @@ bool OptimizerG2O::handleNewOdom(
 }
 
 bool OptimizerG2O::checkAddingConditions(
-  const OdometryInfo & _odometry, const double _distance_threshold)
+  const OdometryInfo & _odometry, const double _distance_threshold,
+  const double _orientation_threshold)
 {
-  // TODO(dps): check time from the last odometry received
-  // FIXME(dps): get rotation distance
-  double translation_distance_from_last_node = _odometry.increment.translation().norm();
-  if (translation_distance_from_last_node < _distance_threshold) {
+  double translation_distance = _odometry.increment.translation().norm();
+  double rotation_distance = Eigen::AngleAxisd(_odometry.increment.rotation()).angle();
+
+  if (translation_distance < _distance_threshold &&
+      rotation_distance < _orientation_threshold) {
     if (init_main_graph_) {
       init_main_graph_ = false;
       return true;
@@ -351,7 +355,8 @@ bool OptimizerG2O::checkAddingNewDetection(
     temp_graph_generated_ = true;
     // main_graph_object_covariance = _object->getCovarianceMatrix();  // FIXME(dps): remove this
   } else {
-    if (!checkAddingConditions(_detection_odometry_info, temp_graph_odometry_distance_threshold_)) {
+    if (!checkAddingConditions(_detection_odometry_info, temp_graph_odometry_distance_threshold_,
+          temp_graph_odometry_orientation_threshold_)) {
       return false;
     }
     temp_graph->addNewKeyframe(
@@ -379,6 +384,7 @@ void OptimizerG2O::handleNewObjectDetection(
 
   if (use_dual_graph_) {
     std::lock_guard<std::mutex> lock(graph_mutex_);
+    if (!temp_graph_generated_) { return; }
     temp_graph->addNewObjectDetection(_object);
   } else {
     std::lock_guard<std::mutex> lock(graph_mutex_);

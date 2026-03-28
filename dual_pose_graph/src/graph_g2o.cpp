@@ -257,6 +257,10 @@ void GraphG2O::addNewObjectDetection(
     return;
   }
 
+  if (last_odom_node_ == nullptr) {
+    ERROR_GRAPH("Last odom node is null, skipping edge creation");
+    return;
+  }
   GraphEdge * object_edge = _object_detection->createEdge(last_odom_node_, object_node);
   if (object_edge == nullptr) {
     ERROR_GRAPH("Object edge is null");
