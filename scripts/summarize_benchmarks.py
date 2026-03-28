@@ -23,6 +23,8 @@ def parse_args():
                         default=Path("results/benchmark_results.csv"))
     parser.add_argument("--output", type=Path, default=None,
                         help="Save summary to CSV (default: print only)")
+    parser.add_argument("--detailed", action="store_true",
+                        help="Show ATE XY and Z breakdowns")
     return parser.parse_args()
 
 
@@ -87,9 +89,10 @@ def main():
         if not vio_track.empty:
             n = len(vio_track)
             print(f"VIO baseline (n={n} flights):")
-            print(f"  ATE 3D:  {vio_track['ate_3d'].mean():.3f} ± {vio_track['ate_3d'].std():.3f} m")
-            print(f"  ATE XY:  {vio_track['ate_xy'].mean():.3f} ± {vio_track['ate_xy'].std():.3f} m")
-            print(f"  ATE Z:   {vio_track['ate_z'].mean():.3f} ± {vio_track['ate_z'].std():.3f} m")
+            print(f"  ATE TRANS:  {vio_track['ate_3d'].mean():.3f} ± {vio_track['ate_3d'].std():.3f} m")
+            if args.detailed:
+                print(f"  ATE XY:  {vio_track['ate_xy'].mean():.3f} ± {vio_track['ate_xy'].std():.3f} m")
+                print(f"  ATE Z:   {vio_track['ate_z'].mean():.3f} ± {vio_track['ate_z'].std():.3f} m")
             print(f"  ATE ROT: {vio_track['ate_rot'].mean():.2f} ± {vio_track['ate_rot'].std():.2f} deg")
             print()
 
@@ -99,12 +102,13 @@ def main():
                 config_str += f" temp={row['temp_thresh']}"
 
             print(f"Config: {config_str}  (n={int(row['n_flights'])} flights)")
-            print(f"  ATE 3D:  {row['ate_3d_mean']:.3f} ± {row['ate_3d_std']:.3f} m"
+            print(f"  ATE TRANS:  {row['ate_3d_mean']:.3f} ± {row['ate_3d_std']:.3f} m"
                   f"  ({row['pct_3d_mean']:+.1f} ± {row['pct_3d_std']:.1f}%)")
-            print(f"  ATE XY:  {row['ate_xy_mean']:.3f} ± {row['ate_xy_std']:.3f} m"
-                  f"  ({row['pct_xy_mean']:+.1f} ± {row['pct_xy_std']:.1f}%)")
-            print(f"  ATE Z:   {row['ate_z_mean']:.3f} ± {row['ate_z_std']:.3f} m"
-                  f"  ({row['pct_z_mean']:+.1f} ± {row['pct_z_std']:.1f}%)")
+            if args.detailed:
+                print(f"  ATE XY:  {row['ate_xy_mean']:.3f} ± {row['ate_xy_std']:.3f} m"
+                      f"  ({row['pct_xy_mean']:+.1f} ± {row['pct_xy_std']:.1f}%)")
+                print(f"  ATE Z:   {row['ate_z_mean']:.3f} ± {row['ate_z_std']:.3f} m"
+                      f"  ({row['pct_z_mean']:+.1f} ± {row['pct_z_std']:.1f}%)")
             print(f"  ATE ROT: {row['ate_rot_mean']:.2f} ± {row['ate_rot_std']:.2f} deg"
                   f"  ({row['pct_rot_mean']:+.1f} ± {row['pct_rot_std']:.1f}%)")
             print(f"  Nodes:   {row['nodes_mean']:.0f} ± {row['nodes_std']:.0f}"
