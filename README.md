@@ -1,20 +1,15 @@
-# SemanticSlam
+# DPS-SLAM: Dual Pose-graph Semantic SLAM
 
-Semantic SLAM system for the [AeroStack2](https://github.com/aerostack2) UAV framework. Fuses odometry
-with semantic object detections (ArUco markers, gates) using
-[G2O](https://github.com/RainerKuemmerle/g2o) pose-graph optimization to produce drift-corrected
-localization.
+Semantic SLAM system for the [AeroStack2](https://github.com/aerostack2) UAV framework. It fuses odometry with semantic object detections using [g2o](https://github.com/RainerKuemmerle/g2o) pose-graph optimization.
 
 ## Features
 
-- **Dual-graph optimization**: a main graph for long-term state estimation and a temporary graph for
-  validating new detections before merging, preventing outlier corruption
-- **Semantic landmarks**: supports ArUco markers (full 6-DOF) and gates (3D position)
-- **Fixed object anchoring**: known landmark positions can be configured to anchor the graph and bound
-  drift
-- **Covariance propagation**: extracts per-node covariance from graph marginals when promoting detections
-- **Multi-distro ROS2**: builds for Humble and Jazzy via `pixi-build-ros`
-- **TF integration**: publishes corrected map → odom transform and localization with covariance
+- **Dual pose-graph optimization**: maintains a persistent global graph for long-term state estimation and a temporary graph that compresses multiple observations into a single optimized constraint, limiting graph growth while preserving detection information.
+- **Semantic landmarks**: supports landmarks represented as full poses (6-DOF) or 3D points.
+- **Fixed landmark anchoring**: allows known landmark positions to be configured as fixed references to reduce long-term drift.
+- **Covariance propagation**: extracts per-node covariance estimates from graph marginals when promoting detections into the global graph.
+- **ROS 2 multi-distro support**: compatible with ROS 2 Humble and Jazzy through `pixi-build-ros`.
+- **TF integration**: publishes the corrected `map → odom` transform and localization estimates with covariance information.
 
 ## Installation
 
