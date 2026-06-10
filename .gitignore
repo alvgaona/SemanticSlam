@@ -12,10 +12,6 @@ log/
 # macOS
 .DS_Store
 
-# Datasets
-dataset/*
-!dataset/camera_calibration
-
 # IDE
 .vscode/
 .idea/
@@ -25,15 +21,3 @@ dataset/*
 # Python
 __pycache__/
 *.pyc
-
-# Runtime output
-slam_*.csv
-slam_*.png
-output_logs/
-
-# Recorded bags (generated per-run)
-dataset/piloted/*/rosbag2_202*/
-dataset/piloted/*/rosbag2_vio_detections/
-
-# Temporary
-/tmp/
