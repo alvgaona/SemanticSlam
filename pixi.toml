@@ -10,11 +10,6 @@ version = "0.1.0"
 channels = ["conda-forge", "https://prefix.dev/aerostack2"]
 platforms = ["osx-arm64"]
 
-[tasks]
-evo-traj = { cmd = "sh -c 'evo_traj bag2 \"$0\" /glim_ros_node/odom --ref /lidarodom/ground_truth/pose --plot -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
-evo-ape = { cmd = "sh -c 'evo_ape bag2 \"$0\" /lidarodom/ground_truth/pose /lidarodom/pose -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
-evo-rpe = { cmd = "sh -c 'evo_rpe bag2 \"$0\" /lidarodom/ground_truth/pose /lidarodom/pose -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
-
 [dependencies]
 pandas = ">=3.0.1,<4"
 numpy = ">=2.4.3,<3"
@@ -36,7 +31,6 @@ channels = ["robostack-humble", "https://prefix.dev/aerostack2"]
 ros-humble-ros2cli = ">=0.18.17,<0.19"
 ros-humble-ros2launch = ">=0.19.13,<0.20"
 ros-humble-ros2topic = ">=0.18.17,<0.19"
-drone_racing_msgs = { path = "thirdparty/drone-racing-msgs/drone_racing_msgs" }
 ros-humble-dual-pose-graph = { path = "dual_pose_graph" }
 ros-humble-rosbag2-storage-mcap = ">=0.15.16,<0.16"
 ros-humble-rosbag2 = ">=0.15.16,<0.16"
