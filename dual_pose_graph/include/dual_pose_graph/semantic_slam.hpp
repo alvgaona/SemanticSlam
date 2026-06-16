@@ -42,8 +42,6 @@
 
 // ROS2
 #include <Eigen/Dense>
-#include <geometry_msgs/msg/detail/pose_with_covariance__struct.hpp>
-#include <geometry_msgs/msg/detail/pose_with_covariance_stamped__struct.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -59,7 +57,9 @@
 #include <nav_msgs/msg/path.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <std_msgs/msg/header.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 #include <as2_core/node.hpp>
 #include "dual_pose_graph/optimizer_g2o.hpp"

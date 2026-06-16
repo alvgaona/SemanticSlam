@@ -41,9 +41,6 @@
 #include <map>
 #include <unordered_map>
 #include <utility>
-#include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
-#include <geometry_msgs/msg/detail/pose_with_covariance_stamped__struct.hpp>
-#include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
 #include <memory>
 #include <rclcpp/subscription_options.hpp>
 #include <string>
@@ -57,7 +54,6 @@
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <visualization_msgs/msg/detail/marker_array__struct.hpp>
 
 // #include <filesystem>
 // #include <pluginlib/class_loader.hpp>
