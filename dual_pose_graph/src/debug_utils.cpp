@@ -36,7 +36,6 @@
  */
 
 #include "utils/debug_utils.hpp"
-#include <Eigen/src/Core/Matrix.h>
 #include <g2o/core/sparse_block_matrix.h>
 #include <g2o/types/slam3d/vertex_pointxyz.h>
 

@@ -36,13 +36,11 @@
  */
 
 #include "dual_pose_graph/semantic_slam.hpp"
-#include <Eigen/src/Core/Matrix.h>
-#include <Eigen/src/Geometry/Transform.h>
-#include <eigen3/Eigen/src/Geometry/Transform.h>
-#include <g2o/core/optimizable_graph.h>
 #include <g2o/types/slam3d/vertex_se3.h>
 #include <g2o/types/slam3d/vertex_pointxyz.h>
+#include <map>
 #include <unordered_map>
+#include <utility>
 #include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
 #include <geometry_msgs/msg/detail/pose_with_covariance_stamped__struct.hpp>
 #include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
@@ -55,7 +53,6 @@
 #include "dual_pose_graph/optimizer_g2o.hpp"
 #include "utils/conversions.hpp"
 #include "dual_pose_graph/object_detection_types.hpp"
-#include "utils/debug_utils.hpp"
 #include "dual_pose_graph/utils/general_utils.hpp"
 
 #include <geometry_msgs/msg/transform_stamped.hpp>

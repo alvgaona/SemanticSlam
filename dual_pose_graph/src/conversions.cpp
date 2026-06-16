@@ -36,7 +36,6 @@
  */
 
 #include "utils/conversions.hpp"
-#include <Eigen/src/Core/Matrix.h>
 #include <string>
 #include <geometry_msgs/msg/detail/pose__struct.hpp>
 

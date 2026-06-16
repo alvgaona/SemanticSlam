@@ -41,8 +41,6 @@
 #define UTILS__CONVERSIONS_HPP_
 
 #include <Eigen/Dense>
-#include <Eigen/src/Core/Matrix.h>
-#include <Eigen/src/Geometry/Transform.h>
 // #include <array>
 #include <string>
 #include <geometry_msgs/msg/pose.hpp>
