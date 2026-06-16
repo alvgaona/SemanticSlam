@@ -37,8 +37,8 @@
  *              All Rights Reserved
  ********************************************************************************/
 
-#ifndef AS2_SLAM__SEMANTIC_SLAM_HPP_
-#define AS2_SLAM__SEMANTIC_SLAM_HPP_
+#ifndef DPS_SLAM__SEMANTIC_SLAM_HPP_
+#define DPS_SLAM__SEMANTIC_SLAM_HPP_
 
 // ROS2
 #include <Eigen/Dense>
@@ -184,4 +184,4 @@ public:
   // plugin_ptr_; std::shared_ptr<tf2_ros::TransformBroadcaster>
 };
 
-#endif  // AS2_SLAM__SEMANTIC_SLAM_HPP_
+#endif  // DPS_SLAM__SEMANTIC_SLAM_HPP_

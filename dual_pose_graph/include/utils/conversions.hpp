@@ -37,8 +37,8 @@
  *              All Rights Reserved
  ********************************************************************************/
 
-#ifndef UTILS__CONVERSIONS_HPP_
-#define UTILS__CONVERSIONS_HPP_
+#ifndef DPS_SLAM__UTILS__CONVERSIONS_HPP_
+#define DPS_SLAM__UTILS__CONVERSIONS_HPP_
 
 #include <Eigen/Dense>
 // #include <array>
@@ -72,4 +72,4 @@ geometry_msgs::msg::TransformStamped convertToTransformStamped(
   const std::string & _child_frame,
   const rclcpp::Time & _stamp);
 
-#endif  // UTILS__CONVERSIONS_HPP_
+#endif  // DPS_SLAM__UTILS__CONVERSIONS_HPP_
