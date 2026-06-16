@@ -40,6 +40,9 @@
 #include <Eigen/src/Geometry/Transform.h>
 #include <eigen3/Eigen/src/Geometry/Transform.h>
 #include <g2o/core/optimizable_graph.h>
+#include <g2o/types/slam3d/vertex_se3.h>
+#include <g2o/types/slam3d/vertex_pointxyz.h>
+#include <unordered_map>
 #include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
 #include <geometry_msgs/msg/detail/pose_with_covariance_stamped__struct.hpp>
 #include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
@@ -567,23 +570,83 @@ void SemanticSlam::visualizeCleanTempGraph()
   viz_temp_markers_pub_->publish(viz_clean_markers_msg);
 }
 
+namespace
+{
+// The published library exposes generic nodes/edges with no visualization API,
+// so markers are built here. Style keys off GraphNode::type_id(): "aruco"
+// (green), "gate" (cyan), and the odom/map nodes (empty type_id -> blue).
+struct VizStyle
+{
+  Eigen::Vector4d color;
+  std::string ns;
+};
+
+VizStyle nodeStyle(const std::string & _type_id)
+{
+  if (_type_id == "aruco") {return {{0.0, 1.0, 0.0, 1.0}, "node/Aruco"};}
+  if (_type_id == "gate") {return {{0.0, 1.0, 1.0, 1.0}, "node/Gate"};}
+  return {{0.0, 0.0, 1.0, 1.0}, "node/Odometry"};
+}
+
+std_msgs::msg::ColorRGBA toColorMsg(Eigen::Vector4d _color, const bool _main)
+{
+  if (!_main) {_color *= 0.5;}
+  std_msgs::msg::ColorRGBA color_msg;
+  color_msg.r = _color[0];
+  color_msg.g = _color[1];
+  color_msg.b = _color[2];
+  color_msg.a = _color[3];
+  return color_msg;
+}
+
+geometry_msgs::msg::Point makePoint(const double _x, const double _y, const double _z)
+{
+  geometry_msgs::msg::Point point;
+  point.x = _x;
+  point.y = _y;
+  point.z = _z;
+  return point;
+}
+}  // namespace
+
 visualization_msgs::msg::MarkerArray SemanticSlam::generateVizNodesMsg(
   std::shared_ptr<GraphG2O> & _graph)
 {
-  bool main = false;
-  std::string viz_frame = earth_frame_;
-  if (_graph->getName() == "Main Graph") {
-    main = true;
-    viz_frame = earth_frame_;
-  }
+  bool main = _graph->get_name() == "Main Graph";
   visualization_msgs::msg::MarkerArray viz_markers_msg;
-  std::vector<GraphNode *> graph_nodes = _graph->getNodes();
-  for (auto & node : graph_nodes) {
-    visualization_msgs::msg::Marker viz_marker_msg = node->getVizMarker(main);
-    viz_marker_msg.header.frame_id = viz_frame;
-    viz_markers_msg.markers.emplace_back(viz_marker_msg);
-    // visualization_msgs::msg::Marker viz_cov_marker_msg = node->getVizCovMarker();
-    // viz_markers_msg.markers.emplace_back(viz_marker_msg);
+  for (auto * node : _graph->get_nodes()) {
+    VizStyle style = nodeStyle(node->type_id());
+    std_msgs::msg::ColorRGBA color = toColorMsg(style.color, main);
+
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = earth_frame_;
+    marker.ns = style.ns;
+    marker.id = node->get_vertex()->id();
+
+    if (auto * vertex_se3 = dynamic_cast<g2o::VertexSE3 *>(node->get_vertex())) {
+      // Coordinate axes as a LINE_LIST (x longest, then y, then z).
+      marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+      marker.pose = convertToGeometryMsgPose(vertex_se3->estimate());
+      marker.scale.x = 0.05;
+      const double axis = 0.2;
+      marker.points.emplace_back(makePoint(0.0, 0.0, 0.0));
+      marker.points.emplace_back(makePoint(axis * 4, 0.0, 0.0));
+      marker.points.emplace_back(makePoint(0.0, 0.0, 0.0));
+      marker.points.emplace_back(makePoint(0.0, axis * 2, 0.0));
+      marker.points.emplace_back(makePoint(0.0, 0.0, 0.0));
+      marker.points.emplace_back(makePoint(0.0, 0.0, axis));
+      for (int i = 0; i < 6; ++i) {marker.colors.emplace_back(color);}
+    } else if (auto * vertex_point = dynamic_cast<g2o::VertexPointXYZ *>(node->get_vertex())) {
+      marker.type = visualization_msgs::msg::Marker::SPHERE;
+      marker.pose = convertToGeometryMsgPose(Eigen::Vector3d(vertex_point->estimate()));
+      marker.scale.x = 0.5;
+      marker.scale.y = 0.5;
+      marker.scale.z = 0.5;
+      marker.color = color;
+    } else {
+      continue;
+    }
+    viz_markers_msg.markers.emplace_back(marker);
   }
   return viz_markers_msg;
 }
@@ -591,18 +654,54 @@ visualization_msgs::msg::MarkerArray SemanticSlam::generateVizNodesMsg(
 visualization_msgs::msg::MarkerArray SemanticSlam::generateVizEdgesMsg(
   std::shared_ptr<GraphG2O> & _graph)
 {
-  bool main = false;
-  std::string viz_frame = earth_frame_;
-  if (_graph->getName() == "Main Graph") {
-    main = true;
-    viz_frame = earth_frame_;
+  bool main = _graph->get_name() == "Main Graph";
+
+  // Map each g2o vertex to its node's type_id so edges can be coloured by the
+  // detection they connect to (odom-to-odom edges stay blue).
+  std::unordered_map<g2o::HyperGraph::Vertex *, std::string> vertex_type;
+  for (auto * node : _graph->get_nodes()) {
+    vertex_type[node->get_vertex()] = node->type_id();
   }
+
   visualization_msgs::msg::MarkerArray viz_markers_msg;
-  std::vector<GraphEdge *> graph_edges = _graph->getEdges();
-  for (auto & edge : graph_edges) {
-    visualization_msgs::msg::Marker viz_marker_msg = edge->getVizMarker(main);
-    viz_marker_msg.header.frame_id = viz_frame;
-    viz_markers_msg.markers.emplace_back(viz_marker_msg);
+  for (auto * edge : _graph->get_edges()) {
+    g2o::HyperGraph::Edge * g2o_edge = edge->get_edge();
+    if (g2o_edge->vertices().size() < 2) {continue;}
+
+    std::string detection_type;
+    for (auto * vertex : g2o_edge->vertices()) {
+      auto it = vertex_type.find(vertex);
+      if (it != vertex_type.end() && !it->second.empty()) {detection_type = it->second;}
+    }
+    Eigen::Vector4d color = detection_type.empty()
+      ? Eigen::Vector4d(0.0, 0.0, 1.0, 1.0)
+      : Eigen::Vector4d(0.0, 1.0, 0.0, 1.0);
+    std::string ns = detection_type == "gate" ? "edge/Gate"
+      : detection_type == "aruco" ? "edge/Aruco"
+      : "edge/Odometry";
+
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = earth_frame_;
+    marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    marker.ns = ns;
+    marker.id = g2o_edge->id();
+    marker.scale.x = 0.02;
+    marker.scale.y = 0.02;
+    marker.scale.z = 0.02;
+    marker.color = toColorMsg(color, main);
+
+    for (auto * vertex : g2o_edge->vertices()) {
+      Eigen::Vector3d position;
+      if (auto * vertex_se3 = dynamic_cast<g2o::VertexSE3 *>(vertex)) {
+        position = vertex_se3->estimate().translation();
+      } else if (auto * vertex_point = dynamic_cast<g2o::VertexPointXYZ *>(vertex)) {
+        position = vertex_point->estimate();
+      } else {
+        continue;
+      }
+      marker.points.emplace_back(makePoint(position.x(), position.y(), position.z()));
+    }
+    viz_markers_msg.markers.emplace_back(marker);
   }
   return viz_markers_msg;
 }
