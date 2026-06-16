@@ -5,25 +5,21 @@ authors = [
     "Miguel Fernandez-Cortizas <TBD>",
     "Alvaro Gaona <alvgaona@gmail.com>"
 ]
-name = "dual-pose-graph"
+name = "dps-slam"
 version = "0.1.0"
-channels = ["conda-forge", "https://prefix.dev/aerostack2"]
-platforms = ["osx-arm64"]
-
-[dependencies]
-# Distro-agnostic experiment / evaluation tooling (used by scripts/).
-pandas = ">=3.0.1,<4"
-numpy = ">=2.4.3,<3"
-scipy = ">=1.17.1,<2"
-pyyaml = ">=6.0.3,<7"
-opencv = ">=4.13.0,<5"
-py-opencv = ">=4.13.0,<5"
-tqdm = ">=4.67.3,<5"
-evo = ">=1.34.3,<2"
-pyqt6 = ">=6.8.1,<7"
+channels = [
+    "conda-forge",
+    "https://prefix.dev/aerostack2",
+    "https://prefix.dev/dual-pose-graph",
+]
+platforms = [
+    "osx-arm64",
+    "linux-aarch64",
+    "linux-64",
+]
 
 [feature.humble]
-channels = ["robostack-humble", "https://prefix.dev/aerostack2", "https://prefix.dev/dual-pose-graph"]
+channels = ["robostack-humble"]
 
 [feature.humble.dependencies]
 ros-humble-ros2cli = ">=0.18.17,<0.19"
@@ -34,11 +30,10 @@ ros-humble-plotjuggler-ros = ">=2.3.1,<3"
 ros-humble-rosbag2 = ">=0.15.16,<0.16"
 ros-humble-rosbag2-storage-mcap = ">=0.15.16,<0.16"
 ros-humble-rviz2 = ">=11.2.25,<12"
-dual_pose_graph = ">=0.1"
 ros-humble-dual-pose-graph = { path = "dual_pose_graph" }
 
 [feature.jazzy]
-channels = ["robostack-jazzy", "https://prefix.dev/aerostack2", "https://prefix.dev/dual-pose-graph"]
+channels = ["robostack-jazzy"]
 
 [feature.jazzy.dependencies]
 ros-jazzy-ros2cli = "*"
@@ -49,12 +44,8 @@ ros-jazzy-plotjuggler-ros = "*"
 ros-jazzy-rosbag2 = "*"
 ros-jazzy-rosbag2-storage-mcap = "*"
 ros-jazzy-rviz2 = "*"
-# Added once the library + wrapper exist for jazzy (a per-distro variant of
-# dual_pose_graph linked against ros-jazzy-libg2o, and a ros-jazzy- wrapper
-# build). Until then these would make the jazzy env unsolvable:
-#   dual_pose_graph = ">=0.1"
-#   ros-jazzy-dual-pose-graph = { path = "dual_pose_graph" }
+ros-jazzy-dual-pose-graph = { path = "dual_pose_graph" }
 
 [environments]
 default = ["humble"]
-jazzy = ["jazzy"]
+# jazzy = ["jazzy"]
