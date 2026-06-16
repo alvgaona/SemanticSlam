@@ -7,9 +7,18 @@ backend = { name = "pixi-build-ros", version = "*" }
 
 [package.build.config]
 extra-package-mappings = [
-    { dual_pose_graph = { conda = ["dual_pose_graph"] } },
     { as2_core = { conda = ["as2_core"] } },
     { as2_msgs = { conda = ["as2_msgs"] } },
     { libfmt = { conda = ["fmt"] } },
     { GeographicLib = { conda = ["geographiclib-cpp"] } },
 ]
+
+# dual_pose_graph is a plain conda library (not a ROS package). Declare it
+# directly as a host/run dependency instead of via package.xml, whose ROS
+# package name "dual_pose_graph" would otherwise collide with this package's
+# own name (ament forbids a package depending on its own name).
+[package.host-dependencies]
+dual_pose_graph = ">=0.1"
+
+[package.run-dependencies]
+dual_pose_graph = ">=0.1"

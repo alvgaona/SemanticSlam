@@ -22,7 +22,6 @@
   <depend>pluginlib</depend>
   <depend>backward_ros</depend>
   <depend>libfmt</depend>
-  <depend>dual_pose_graph</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
