@@ -1,6 +1,6 @@
 [package]
 name = "ros-humble-dual-pose-graph"
-version = "1.0.6"
+version = "0.1.0"
 
 [package.build]
 backend = { name = "pixi-build-ros", version = "*" }
