@@ -62,7 +62,7 @@
 #include <as2_core/node.hpp>
 #include "dual_pose_graph/optimizer_g2o.hpp"
 #include "utils/conversions.hpp"
-#include "utils/csv_logger.hpp"
+#include "dual_pose_graph/utils/csv_logger.hpp"
 
 class SemanticSlam : public as2::Node
 {

@@ -49,39 +49,9 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-struct PoseSE3
-{
-  Eigen::Vector3d position;
-  Eigen::Quaterniond orientation;
-};
-
-struct IsometryWithID
-{
-  std::string id;
-  Eigen::Isometry3d isometry;
-};
-
-struct OdometryInfo
-{
-  // Eigen::Isometry3d measurement;      // Odometry measurement received.
-  Eigen::Isometry3d increment;     // Increment from the last odometry pose.
-  Eigen::Isometry3d odom_ref;      // Odometry pose referenced from the "odom" frame.
-  Eigen::Isometry3d map_ref;       // Odometry pose referenced from the "map" frame.
-  Eigen::MatrixXd covariance_matrix;  // Covariance matrix of the odometry measurement.
-};
-
-struct OdometryWithCovariance
-{
-  Eigen::Isometry3d odometry;
-  Eigen::MatrixXd covariance;
-};
-
-struct FixedObject
-{
-  std::string id;
-  std::string type;
-  Eigen::Isometry3d isometry;
-};
+// PoseSE3, IsometryWithID, OdometryInfo, OdometryWithCovariance and FixedObject
+// are provided by the dual_pose_graph library.
+#include "dual_pose_graph/utils/conversions.hpp"
 
 PoseSE3 convertToPoseSE3(
   const Eigen::Vector3d & _position,

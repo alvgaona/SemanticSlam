@@ -42,7 +42,7 @@
 
 void debugGraphVertices(std::shared_ptr<GraphG2O> _graph)
 {
-  FLAG("Debugging vertices in " << _graph->getName());
+  FLAG("Debugging vertices in " << _graph->get_name());
   for (auto p : _graph->graph_->vertices()) {
     int id = p.first;
 
