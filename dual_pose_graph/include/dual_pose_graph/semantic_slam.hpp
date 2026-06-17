@@ -70,7 +70,7 @@ class SemanticSlam : public as2::Node
 {
 public:
   SemanticSlam(rclcpp::NodeOptions & options);
-  ~SemanticSlam() {}
+  ~SemanticSlam() {dumpEstimatedObjects();}
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
   void poseStampedCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
@@ -91,6 +91,7 @@ private:
   void visualizeCleanTempGraph();
   void visualizeMainGraph();
   void visualizeTempGraph();
+  void dumpEstimatedObjects();
 
   visualization_msgs::msg::MarkerArray generateVizNodesMsg(std::shared_ptr<GraphG2O> & _graph);
   visualization_msgs::msg::MarkerArray generateVizEdgesMsg(std::shared_ptr<GraphG2O> & _graph);

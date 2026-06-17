@@ -38,6 +38,7 @@
 #include "dual_pose_graph/semantic_slam.hpp"
 #include <g2o/types/slam3d/vertex_se3.h>
 #include <g2o/types/slam3d/vertex_pointxyz.h>
+#include <fstream>
 #include <map>
 #include <unordered_map>
 #include <utility>
@@ -903,4 +904,32 @@ Eigen::Isometry3d SemanticSlam::getOdometryFromOpenVins(const nav_msgs::msg::Odo
     odom_pose.header.frame_id = odom_frame_;
     odom_pose.child_frame_id = robot_frame_;
     return convertToIsometry3d(odom_pose.pose.pose);
+}
+
+void SemanticSlam::dumpEstimatedObjects()
+{
+  if (!optimizer_ptr_ || !optimizer_ptr_->main_graph) {
+    return;
+  }
+  std::ofstream file("slam_estimated_objects.csv");
+  if (!file.is_open()) {
+    return;
+  }
+  file << "id,type,x,y,z,qx,qy,qz,qw\n";
+  for (const auto &[id, node] : optimizer_ptr_->main_graph->get_object_nodes()) {
+    if (auto * vertex_se3 = dynamic_cast<g2o::VertexSE3 *>(node->get_vertex())) {
+      Eigen::Isometry3d estimate = vertex_se3->estimate();
+      Eigen::Vector3d position = estimate.translation();
+      Eigen::Quaterniond orientation(estimate.rotation());
+      file << id << "," << node->type_id() << ","
+           << position.x() << "," << position.y() << "," << position.z() << ","
+           << orientation.x() << "," << orientation.y() << ","
+           << orientation.z() << "," << orientation.w() << "\n";
+    } else if (auto * vertex_point = dynamic_cast<g2o::VertexPointXYZ *>(node->get_vertex())) {
+      Eigen::Vector3d position = vertex_point->estimate();
+      file << id << "," << node->type_id() << ","
+           << position.x() << "," << position.y() << "," << position.z()
+           << ",0,0,0,1\n";
+    }
+  }
 }
